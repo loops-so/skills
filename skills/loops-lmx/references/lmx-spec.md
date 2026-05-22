@@ -1,6 +1,6 @@
 # LMX Specification
 
-LMX (Loops Markup Language) is an XML-based email content format for the Loops editor and Content API. Every element is a PascalCase tag; there is no Markdown or HTML shorthand.
+LMX (Loops Markup Language) is an XML-based email content format for the Loops editor and email editing API endpoints. Every element is a PascalCase tag; there is no Markdown or HTML shorthand.
 
 ---
 
@@ -17,7 +17,7 @@ LMX (Loops Markup Language) is an XML-based email content format for the Loops e
 9. **Escape `<` and `&` in text** as `&lt;` and `&amp;`. Escape `"` and `&` in attribute values as `&quot;` and `&amp;`.
 10. **One `<Style />` tag maximum.** It is top-level metadata. Prefer putting it first; the exporter always emits it first.
 11. **LMX is separate from MJML upload syntax.** Do not use MJML tags or legacy dynamic tag prefixes inside LMX.
-12. **Content API payload limit:** LMX sent through the email-message API must be at most 100 KB.
+12. **API payload limit:** LMX sent through the email-message API must be at most 100 KB.
 
 ---
 

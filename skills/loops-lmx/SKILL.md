@@ -3,7 +3,7 @@ name: loops-lmx
 description: >
   Use this skill whenever the user wants to create, write, generate, or edit
   email content in Loops. This includes composing campaigns, loops, lifecycle
-  emails, or email-message bodies for the Loops editor or Content API. LMX
+  emails, or email-message bodies for the Loops editor. LMX
   (Loops Markup Language) is the format used for Loops email content. Trigger
   on phrases like "create a campaign", "generate an
   email", "write a welcome email", "draft a lifecycle email", "build an email
@@ -12,7 +12,7 @@ description: >
   trigger for questions about the Loops HTTP API, SDK integration, or CLI unless
   email body content is also involved.
 metadata:
-  version: 1.1.2
+  version: 1.1.3
 ---
 
 # LMX Skill
@@ -46,6 +46,9 @@ When this skill is active:
 
 - Color contrast, spacing, column rounded corners, Style tag usage, visual hierarchy, or any "how should this look" question:
   Read `references/lmx-design-guidelines.md`
+
+- Creating campaigns, posting LMX via the API, revision IDs, themes, components, or image uploads:
+  Use the `loops-api` skill (HTTP) or `loops-cli` skill (terminal). This skill covers the LMX document itself.
 
 ## Output Checklist
 
