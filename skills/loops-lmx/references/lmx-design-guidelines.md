@@ -71,6 +71,7 @@ Default approach:
 - `<Button>`: add `paddingTop="24"` and `paddingBottom="24"` to give CTAs room.
 - `<Divider>`: typically fine without explicit padding, but add `paddingTop="16" paddingBottom="16"` if elements feel crowded.
 - `<Image />`: `paddingBottom="16"` unless immediately followed by a caption paragraph.
+- Adjacent top-level `<Section>` nodes: always add visible space between them. Unless the user explicitly specifies another spacing approach, separate section siblings with a line-break spacer. `<Br />` is inline-only and never top-level, so use a valid block wrapper such as `<Paragraph><Br /></Paragraph>`.
 
 Use `bodyYPadding` on `<Style />` for global top/bottom padding inside the body — `"16"` to `"32"` is a sensible default.
 
@@ -86,7 +87,7 @@ Use `bodyYPadding` on `<Style />` for global top/bottom padding inside the body 
 
 ## Rounded Column Layouts
 
-LMX supports `blockColor` and `blockBorderRadius` on `<Columns>`. If you need a rounded two-column card, put the shared background and radius on `<Columns>` itself.
+LMX supports two, three, or four `<ColumnItem>` children inside `<Columns>`. If you need a rounded multi-column card, put the shared background and radius on `<Columns>` itself.
 
 Avoid applying matching `blockBorderRadius` values to separate block elements inside each `<ColumnItem>` with the intention of rounding the whole column layout. Columns render as adjacent table cells; two independently rounded inner blocks placed side by side can produce awkward mismatched corners.
 
@@ -117,6 +118,8 @@ Use this pattern instead:
 </Columns>
 ```
 
+For three- and four-column layouts, provide one width value per `<ColumnItem>`, for example `widths="33,33,34"` or `widths="25,25,25,25"`.
+
 Rounding is fine on standalone blocks (outside `<Columns>`), on `<Button>`, and on `<Image />`.
 
 ---
@@ -135,6 +138,20 @@ Use `<Section>` when a design needs a card, group, or framed content area around
 
 Do not nest `<Section>` inside another `<Section>`. If you need grouped content inside a card, use ordinary child blocks, lists, columns, or dividers within one section.
 
+Do not place two top-level `<Section>` siblings directly next to each other. Add a line-break spacer between them unless the user explicitly specifies a different spacing treatment:
+
+```xml
+<Section blockColor="#f8fafc" blockBorderRadius="12" paddingTop="16" paddingRight="16" paddingBottom="16" paddingLeft="16">
+  <H2>First group</H2>
+  <Paragraph>Details for the first group.</Paragraph>
+</Section>
+<Paragraph><Br /></Paragraph>
+<Section blockColor="#ffffff" blockBorderRadius="12" paddingTop="16" paddingRight="16" paddingBottom="16" paddingLeft="16">
+  <H2>Second group</H2>
+  <Paragraph>Details for the second group.</Paragraph>
+</Section>
+```
+
 ---
 
 ## CodeBlock Color Pairing
@@ -151,6 +168,9 @@ When you set a custom `blockColor` on a `<CodeBlock>`, visually pair it with the
 
 - One `<H1>` per document (unless the content genuinely has multiple top-level sections).
 - Follow heading levels in order: `<H1>` → `<H2>` → `<H3>`. Don't skip levels for styling reasons — adjust `fontSize` instead.
+- Use subtle emphasis to draw attention to the most important content. In inline-content blocks such as `<Paragraph>`, `<ListItem>`, `<Quote>`, `<H1>`, `<H2>`, and `<H3>`, wrap short key phrases with `<Strong>` rather than bolding whole paragraphs.
+- Buttons cannot contain inline formatting tags, so make CTA buttons feel visually strong through clear action copy, high-contrast `bgColor`/`textColor`, enough padding, centered alignment when appropriate, and a restrained `borderRadius`.
+- Make headers and important callouts stand out with hierarchy, spacing, color, or a light `blockColor` treatment. Keep emphasis selective so the whole email still feels calm and scannable.
 - CTAs (`<Button>`) should stand out: high contrast, enough padding, aligned centrally for most transactional emails.
 - Use `<Divider />` sparingly to separate distinct sections, not between every element.
 - Keep icon rows (`<Icons>`) near the footer, typically the last or second-to-last block.
