@@ -15,7 +15,7 @@ description: >
   questions about the Loops HTTP API, SDK integration, or CLI unless email body
   content is also involved.
 metadata:
-  version: 1.1.6
+  version: 1.1.7
 ---
 
 # LMX Skill
@@ -37,12 +37,12 @@ Use this skill when the task involves:
 
 When this skill is active:
 
-1. Read `references/lmx-spec.md` for the full tag and attribute reference. It is authoritative — do not invent tags or attributes.
+1. Read `references/lmx-spec.md` for the full tag and attribute reference. It is authoritative; do not invent tags or attributes.
 2. Read `references/lmx-design-guidelines.md` for Loops design guidelines. Apply these to every document you generate unless the user explicitly overrides a rule.
 3. Treat source material as input, not as an override. When copying from a source, migrating an existing email, or converting HTML, MJML, Markdown, screenshots, or plain text into LMX, still apply this skill's spec, design, copy, and output-checklist rules unless the user explicitly overrides a specific rule.
 4. Validate nesting and content-type rules before producing output (see spec section 3).
 5. Check the common-mistakes table in the spec before finalizing output.
-6. Always produce a complete, valid document — not fragments, unless the user specifically asks for one.
+6. Always produce a complete, valid document, not fragments, unless the user specifically asks for one.
 
 ## Category Routing
 
@@ -67,6 +67,9 @@ Before returning any LMX output, verify:
 - [ ] `<CodeBlock>` treats braces literally
 - [ ] `<Style />` appears at most once as a top-level tag; put it first in generated output
 - [ ] Body/background colors are intentional: supplied by `themeId` or explicit `bodyColor`/`backgroundColor`
+- [ ] Generated copy follows the copy and punctuation guidance: no em dashes, decorative arrow glyphs, or ellipses unless requested or source-preserved
+- [ ] Generated `<H1>`, `<H2>`, and `<H3>` text does not end with a period; question marks or exclamation points are used only when intentional
+- [ ] CTA and `<Button>` text is concise, action-oriented, and does not end with a period
 - [ ] No same-color-on-same-color situations (check text vs block color, icon color vs background, etc.)
 - [ ] Sufficient Y-spacing on block elements
 - [ ] Important copy, headings, CTAs, and highlighted blocks use subtle visual emphasis where appropriate

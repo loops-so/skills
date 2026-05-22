@@ -8,8 +8,8 @@ These guidelines apply to every LMX document unless the user explicitly override
 
 Every document should have intentional body and background colors, either from a referenced theme or from explicit `<Style />` overrides.
 
-- `bodyColor` — the email body/card background (the centered content area)
-- `backgroundColor` — the page/canvas behind the body
+- `bodyColor`: the email body/card background (the centered content area)
+- `backgroundColor`: the page/canvas behind the body
 
 If `<Style />` has a `themeId` and that theme already defines suitable body and background colors, do not duplicate those attributes unless you are intentionally overriding the theme. If no theme is used, or the theme colors are unknown, set both `bodyColor` and `backgroundColor` explicitly.
 
@@ -48,15 +48,15 @@ Never place text, icons, or UI elements in the same color (or near-same color) a
 - Never use `textColor="#ffffff"` on a block with `blockColor="#ffffff"` or a light `bodyColor`.
 
 **Buttons:**
-- `bgColor` and `textColor` on `<Button>` must contrast. Dark background → light text. Light background → dark text.
-- If no explicit `textColor` is set on a `<Button>`, assume the document's `textBaseColor` will be used — ensure that still contrasts against the button `bgColor`.
+- `bgColor` and `textColor` on `<Button>` must contrast. Dark backgrounds need light text. Light backgrounds need dark text.
+- If no explicit `textColor` is set on a `<Button>`, assume the document's `textBaseColor` will be used; ensure that still contrasts against the button `bgColor`.
 
 **CodeBlock:**
 - `<CodeBlock>` has its own `blockColor`. If you set a custom `blockColor` on a `<CodeBlock>`, also ensure the surrounding `bodyColor` and the code text color are visually distinct from that block. A good default is a slightly darker or muted tint of the body color (e.g. `#f1f5f9` on a white body).
-- If you change `<CodeBlock blockColor="…">` to a dark color, you must also visually account for the code text — note that there is no explicit text color attribute on `<CodeBlock>`, so use `blockColor` values that contrast with the inherited text color.
+- If you change `<CodeBlock blockColor="...">` to a dark color, you must also visually account for the code text; note that there is no explicit text color attribute on `<CodeBlock>`, so use `blockColor` values that contrast with the inherited text color.
 
 **Icons:**
-- `<Icons color="…">` sets the icon color. If the `<Icons>` block sits on a `bodyColor` background, the icon color must contrast against the body. White icons on a white body are invisible.
+- `<Icons color="...">` sets the icon color. If the `<Icons>` block sits on a `bodyColor` background, the icon color must contrast against the body. White icons on a white body are invisible.
 - If you set `blockColor` on the `<Icons>` element, icon color must contrast against that, not the body.
 
 ---
@@ -73,14 +73,70 @@ Default approach:
 - `<Image />`: `paddingBottom="16"` unless immediately followed by a caption paragraph.
 - Adjacent top-level `<Section>` nodes: always add visible space between them. Unless the user explicitly specifies another spacing approach, separate section siblings with a line-break spacer. `<Br />` is inline-only and never top-level, so use a valid block wrapper such as `<Paragraph><Br /></Paragraph>`.
 
-Use `bodyYPadding` on `<Style />` for global top/bottom padding inside the body — `"16"` to `"32"` is a sensible default.
+Use `bodyYPadding` on `<Style />` for global top/bottom padding inside the body. `"16"` to `"32"` is a sensible default.
 
 ```xml
-<!-- Good — elements breathe -->
+<!-- Good: elements breathe -->
 <Style bodyColor="#ffffff" backgroundColor="#f1f5f9" bodyYPadding="24" />
 <H1 paddingTop="8" paddingBottom="4">Welcome aboard</H1>
 <Paragraph paddingBottom="16">Here is what happens next.</Paragraph>
 <Button href="https://loops.so" bgColor="#0f172a" textColor="#ffffff" align="center" paddingTop="8" paddingBottom="24">Get started</Button>
+```
+
+---
+
+## Copy Quality And Punctuation
+
+LMX output is often generated from rough notes, screenshots, Markdown, HTML, or pasted marketing copy. Treat that material as source input, then produce copy that reads like a polished email while still respecting the user's intent.
+
+### Generated Copy
+
+For generated or rewritten copy:
+
+- Avoid em dashes unless the user explicitly asks for them. Prefer commas, colons, parentheses, or shorter sentences.
+- Avoid decorative arrow glyphs and ellipses unless they are part of a user-provided brand style or exact source copy.
+- Keep sentences direct. Do not use punctuation to create artificial drama or a generic "AI-written" cadence.
+- Prefer one clear idea per sentence over long compound lines.
+
+### Source Copy
+
+When the user asks for exact migration or preservation, keep source punctuation unless it violates XML escaping, creates invalid LMX, or conflicts with a rule the user explicitly asked you to apply. If the user asks to improve or rewrite the source, apply the generated-copy rules.
+
+### Headings
+
+Generated heading text in `<H1>`, `<H2>`, and `<H3>` should read like labels, not body sentences:
+
+- Do not end generated headings with periods.
+- Use question marks only for real questions.
+- Use exclamation points sparingly and only when the requested tone calls for them.
+- Preserve source heading punctuation only when the user asks for exact copy preservation.
+
+```xml
+<!-- Good: headings read as labels -->
+<H1>Welcome aboard</H1>
+<H2>Your setup checklist</H2>
+<H3>Before you send</H3>
+
+<!-- Not this: terminal periods make headings feel like body copy -->
+<H1>Welcome aboard.</H1>
+<H2>Your setup checklist.</H2>
+<H3>Before you send.</H3>
+```
+
+### CTAs And Buttons
+
+Button copy should be compact and action-oriented:
+
+- Use clear verbs such as `Start`, `View`, `Create`, `Send`, `Review`, or `Upgrade`.
+- Avoid trailing periods in `<Button>` text.
+- Avoid inline punctuation tricks to make a weak CTA feel stronger.
+
+```xml
+<!-- Good: short action copy -->
+<Button href="https://example.com/report">View report</Button>
+
+<!-- Not this: button copy is sentence-like and over-punctuated -->
+<Button href="https://example.com/report">View your report.</Button>
 ```
 
 ---
@@ -160,14 +216,14 @@ When you set a custom `blockColor` on a `<CodeBlock>`, visually pair it with the
 
 - Light body (`bodyColor="#ffffff"`): use a subtle tinted block, e.g. `blockColor="#f8fafc"` or `blockColor="#f1f5f9"`. This creates separation without jarring contrast.
 - Dark body (`bodyColor="#0f172a"`): use a slightly lighter dark, e.g. `blockColor="#1e293b"`.
-- Avoid colorful block colors on `<CodeBlock>` — code should read as technical/neutral.
+- Avoid colorful block colors on `<CodeBlock>`; code should read as technical/neutral.
 
 ---
 
 ## Visual Hierarchy Summary
 
 - One `<H1>` per document (unless the content genuinely has multiple top-level sections).
-- Follow heading levels in order: `<H1>` → `<H2>` → `<H3>`. Don't skip levels for styling reasons — adjust `fontSize` instead.
+- Follow heading levels in order: `<H1>` -> `<H2>` -> `<H3>`. Don't skip levels for styling reasons; adjust `fontSize` instead.
 - Use subtle emphasis to draw attention to the most important content. In inline-content blocks such as `<Paragraph>`, `<ListItem>`, `<Quote>`, `<H1>`, `<H2>`, and `<H3>`, wrap short key phrases with `<Strong>` rather than bolding whole paragraphs.
 - Buttons cannot contain inline formatting tags, so make CTA buttons feel visually strong through clear action copy, high-contrast `bgColor`/`textColor`, enough padding, centered alignment when appropriate, and a restrained `borderRadius`.
 - Make headers and important callouts stand out with hierarchy, spacing, color, or a light `blockColor` treatment. Keep emphasis selective so the whole email still feels calm and scannable.
