@@ -132,14 +132,14 @@ Use this skill when you need to:
 
 - create or edit Loops email content in LMX
 - review LMX markup for valid tags, nesting, attributes, and variables
-- use contact properties, data variables, event properties, arrays, components, sections, dynamic links, or dynamic images in Loops email content
+- use contact properties, components, sections, dynamic links, or dynamic images in Loops email content
 - apply Loops email design guidance while producing valid LMX
 
 Example prompts:
 
 - "Write a product update campaign in LMX."
 - "Convert this lifecycle email copy into Loops LMX."
-- "Review this LMX for production API compatibility."
+- "Review this LMX for Content API compatibility."
 
 Skill file: [skills/loops-lmx/SKILL.md](./skills/loops-lmx/SKILL.md)
 
@@ -148,7 +148,7 @@ Skill file: [skills/loops-lmx/SKILL.md](./skills/loops-lmx/SKILL.md)
 - This repo is maintained by Loops.
 - The Loops CLI has its own skill in this repo.
 - The Loops CLI itself is still pre-release and may change faster than the API and SDK docs.
-- The LMX skill tracks production LMX behavior in the Loops editor and content API.
+- The LMX skill tracks documented LMX behavior in the Loops editor and Content API.
 
 ## Versioning And Releases
 

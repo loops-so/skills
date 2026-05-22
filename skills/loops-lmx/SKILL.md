@@ -3,16 +3,16 @@ name: loops-lmx
 description: >
   Use this skill whenever the user wants to create, write, generate, or edit
   email content in Loops. This includes composing campaigns, loops, lifecycle
-  emails, transactional email bodies, or any email template for the Loops
-  editor or API. LMX (Loops Markup Language) is the format used for all Loops
-  email content. Trigger on phrases like "create a campaign", "generate an
+  emails, or email-message bodies for the Loops editor or Content API. LMX
+  (Loops Markup Language) is the format used for Loops email content. Trigger
+  on phrases like "create a campaign", "generate an
   email", "write a welcome email", "draft a lifecycle email", "build an email
-  template", "write a transactional email body", "create an onboarding email",
-  "LMX", "Loops email", or any request to produce or modify email body content
-  intended for Loops. Do not trigger for questions about the Loops HTTP API,
-  SDK integration, or CLI unless email body content is also involved.
+  template", "create an onboarding email", "LMX", "Loops email", or any
+  request to produce or modify email body content intended for Loops. Do not
+  trigger for questions about the Loops HTTP API, SDK integration, or CLI unless
+  email body content is also involved.
 metadata:
-  version: 1.1.1
+  version: 1.1.2
 ---
 
 # LMX Skill
@@ -53,19 +53,20 @@ Before returning any LMX output, verify:
 
 - [ ] All tags are PascalCase and in the allowed set
 - [ ] All self-closing tags use `/>` (e.g. `<Image />`, `<Divider />`, `<Br />`, `<Icon />`, `<Style />`)
+- [ ] XML-sensitive characters are escaped: `&` as `&amp;`, `<` as `&lt;`, and `"` in attributes as `&quot;`
+- [ ] Required attrs are present: `src` on `<Image />`, `componentId` on `<Component>`, `name` on `<Icon />`, and `href` on `<Link>`
 - [ ] No text or inline tags at the top level
-- [ ] Variables use explicit LMX namespaces: `{contact.name}`, `{data.name}`, `{event.name}`, or `{system.name}`
-- [ ] Variables only appear where supported: inline content, button text, supported dynamic attrs, or `<For variable="{...}">`
+- [ ] Variables use explicit LMX namespaces and only appear where supported: inline content, button text, `<Button href>`, `<Link href>`, `<Image alt/href/dynamicSrc>`, and `<Section href>`
 - [ ] No inline fallback syntax is invented; fallbacks live outside the LMX string
-- [ ] `<Button>` text has no inline tags, but can contain variables; `<CodeBlock>` treats braces literally
-- [ ] `<For variable="...">` uses braces, is prefixed, and contains at least one block child
+- [ ] `<Button>` text has no inline tags, but can contain variables; include `href` for clickable CTA buttons
+- [ ] `<CodeBlock>` treats braces literally
 - [ ] `<Style />` appears at most once as a top-level tag; put it first in generated output
 - [ ] Body/background colors are intentional: supplied by `themeId` or explicit `bodyColor`/`backgroundColor`
 - [ ] Generated copy avoids em dashes unless the user explicitly asked for them
 - [ ] Generated `<H1>`, `<H2>`, and `<H3>` text does not end with a period
 - [ ] No same-color-on-same-color situations (check text vs block color, icon color vs background, etc.)
 - [ ] Sufficient Y-spacing on block elements
-- [ ] Current tag names are used: `<Component>`, not `<ComponentContainer>`; `themeId`, not `styleTemplateId`
 - [ ] `<Columns>` has exactly two `<ColumnItem>` children
 - [ ] Dynamic images use static `src` plus `dynamicSrc`, not variables in `src`
 - [ ] `<Icons color>` uses one of `#000000`, `#808080`, or `#ffffff`; `<Icon>` has no `color` attr
+- [ ] No legal footer, postal address, or unsubscribe block is added by hand; Loops adds required footer content automatically. A branded footer component can appear above it

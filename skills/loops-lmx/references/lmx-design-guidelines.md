@@ -104,7 +104,7 @@ Do not add terminal periods to generated heading text in `<H1>`, `<H2>`, or `<H3
 
 ## Rounded Column Layouts
 
-The current LMX runtime supports `blockColor` and `blockBorderRadius` on `<Columns>`. If you need a rounded two-column card, put the shared background and radius on `<Columns>` itself.
+LMX supports `blockColor` and `blockBorderRadius` on `<Columns>`. If you need a rounded two-column card, put the shared background and radius on `<Columns>` itself.
 
 Avoid applying matching `blockBorderRadius` values to separate block elements inside each `<ColumnItem>` with the intention of rounding the whole column layout. Columns render as adjacent table cells; two independently rounded inner blocks placed side by side can produce awkward mismatched corners.
 

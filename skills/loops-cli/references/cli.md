@@ -12,10 +12,10 @@
 
 ## Source URLs
 
-- https://github.com/Loops-so/cli
-- https://github.com/Loops-so/cli/blob/main/README.md
+- https://github.com/loops-so/cli
+- https://github.com/loops-so/cli/blob/main/README.md
 
-Use `loops --help` and command-specific help output when you need exact flags or the latest command shape.
+Use `loops agent-context` when you need exact flags or the latest command shape.
 
 ## When To Use The CLI
 
@@ -31,7 +31,7 @@ Prefer SDKs or raw HTTP for application code.
 
 ## Installation
 
-The current CLI README describes the CLI as pre-release alpha software. Prefer `loops --help` and the README as the source of truth if installation or auth behavior seems to be moving.
+The current CLI README describes the CLI as pre-release alpha software. Prefer the README as the source of truth if installation behavior seems to be moving.
 
 ### Homebrew
 
@@ -42,7 +42,7 @@ brew install loops-so/tap/loops
 ### Install script (macOS, Linux, Windows via WSL)
 
 ```bash
-curl -fsSL --proto '=https' --tlsv1.2 https://cli.loops.so | bash
+curl -fsSL https://cli.loops.so | bash
 ```
 
 To install a specific version or to a custom path, append `-s -- <version> <path>` to `bash` in the command above. The default install path is `~/.local/bin`.
@@ -265,4 +265,4 @@ This is the same transactional send flow as `loops transactional send`.
 - Use named keys plus `loops auth use` when switching between Loops teams regularly.
 - Use `--team` when you want to override the active stored key for a single command.
 - Use `--debug` when you need to inspect request behavior from the terminal.
-- If the user needs an exact flag or command not covered here, fall back to `loops --help` and the command-specific help output.
+- If the user needs an exact flag or command not covered here, fall back to `loops agent-context`.

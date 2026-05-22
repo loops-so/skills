@@ -11,7 +11,7 @@ description: >
   user wants to integrate Loops into their app, backend, webhook, or
   automation. Do not trigger for CLI or shell-only requests.
 metadata:
-  version: 1.2.1
+  version: 1.2.3
 ---
 
 # Loops API and SDK Skill

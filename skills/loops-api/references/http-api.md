@@ -289,6 +289,30 @@ Attachments must be enabled on your account before use. Contact `help@loops.so` 
 
 Supports the `Idempotency-Key` header the same way as events.
 
+### Content API Email Messages
+
+#### Update an email message
+
+```
+POST /email-messages/{emailMessageId}
+```
+
+Use this for draft campaign email messages when setting subject, preview text, sender, and LMX content. Include `expectedRevisionId` from the latest `contentRevisionId` to avoid stale writes. For the first update after `POST /campaigns`, use the returned `emailMessageContentRevisionId`.
+
+```jsonc
+{
+  "expectedRevisionId": "rev_123",
+  "subject": "Welcome",
+  "previewText": "A quick start guide",
+  "fromName": "Loops",
+  "fromEmail": "updates",
+  "replyToEmail": "support@example.com",
+  "lmx": "<Paragraph>Hello</Paragraph>"
+}
+```
+
+`fromEmail` is the sender username only, without `@` or a domain. The team's sending domain is appended automatically. LMX compile failures, including missing required LMX attributes such as `<Image src>`, `<Component componentId>`, `<Icon name>`, or `<Link href>`, return HTTP 422.
+
 ---
 
 ## Code Examples
@@ -434,12 +458,13 @@ curl -X POST https://app.loops.so/api/v1/contacts/create \
 | --- | --- | --- |
 | 401 | Invalid API key | Check the key is correct and has not been revoked |
 | 400 | Bad request | Check required fields and value types |
-| 404 | Not found | Contact or transactional email ID does not exist |
-| 409 | Conflict | Email or userId already exists, or idempotency key was reused |
+| 404 | Not found | Contact, transactional email, or email message ID does not exist |
+| 409 | Conflict | Email or userId already exists, idempotency key was reused, campaign is not draft, content cannot be parsed, or `expectedRevisionId` is stale |
+| 422 | LMX failed to compile | Fix invalid LMX, missing required LMX attributes, or XML escaping |
 | 429 | Rate limited | Back off and retry |
 | CORS error | Client-side request | Move the API call to your server |
 
-Request body string values are limited to **500 characters**.
+Most v1 contact, event, and transactional request body string values are limited to **500 characters**. LMX content on email-message updates follows the LMX payload limit.
 
 ---
 
@@ -448,6 +473,7 @@ Request body string values are limited to **500 characters**.
 - **Upsert pattern**: Use `PUT /v1/contacts/update` when you are not sure if a contact exists.
 - **`addToAudience` on transactional**: Setting this to `true` when sending a transactional email will make sure the recipient is added to the audience for marketing emails.
 - **Finding your `transactionalId`**: Go to the Loops dashboard -> Transactional, or call `GET /v1/transactional`.
+- **`fromEmail` on email messages**: Pass only the sender username, such as `"updates"`, not `"updates@example.com"`.
 - **Mailing list membership**: Pass `{ "list_id": true }` to subscribe and `{ "list_id": false }` to unsubscribe.
 - **Event name matching**: The `eventName` must match the configured Loops trigger exactly.
 - **Idempotency keys**: Use these any time an operation could be retried, such as webhook handlers or confirmation flows.

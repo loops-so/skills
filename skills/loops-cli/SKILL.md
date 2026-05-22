@@ -33,7 +33,7 @@ This skill is for command-line usage, not application integrations or email-stra
 
 When this skill is active:
 
-1. Prefer `loops --help` and command-specific help output for exact flags and the latest command shape.
+1. Prefer `loops agent-context` for exact flags and the latest command shape.
 2. Prefer the CLI for shell workflows, one-off operational tasks, credential validation, and quick troubleshooting.
 3. Use `--output json` when the result needs to feed another tool or script.
 4. Use named stored keys plus `--team` when the user works across multiple Loops teams.
@@ -42,8 +42,8 @@ When this skill is active:
 
 Official references:
 
-- CLI repo: `https://github.com/Loops-so/cli`
-- CLI README: `https://github.com/Loops-so/cli/blob/main/README.md`
+- CLI repo: `https://github.com/loops-so/cli`
+- CLI README: `https://github.com/loops-so/cli/blob/main/README.md`
 
 ## Category Routing
 
