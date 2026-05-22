@@ -63,7 +63,7 @@ Nesting summary:
 - `<Button>` -> text content with variables allowed, but no inline formatting tags.
 - `<CodeBlock>` -> raw literal text; variables are not parsed.
 - `<OrderedList>`, `<UnorderedList>` -> one or more `<ListItem>` children.
-- `<Columns>` -> exactly two `<ColumnItem>` children.
+- `<Columns>` -> two to four `<ColumnItem>` children.
 - `<ColumnItem>` -> block tags, excluding `<Style>` and nested `<Columns>`.
 - `<Component>` -> block tags, excluding `<Style>` and nested `<Component>`.
 - `<Section>` -> block tags, excluding `<Style>` and nested `<Section>`.
@@ -237,14 +237,14 @@ Lists must contain at least one `<ListItem>`. `<ListItem>` accepts inline conten
 
 ### 5.10 `<Columns>` and `<ColumnItem>`
 
-Two-column layout. `<Columns>` must contain exactly two `<ColumnItem>` children. `<ColumnItem>` takes no attributes and contains block tags, excluding nested columns.
+Multi-column layout. `<Columns>` must contain two to four `<ColumnItem>` children. `<ColumnItem>` takes no attributes and contains block tags, excluding nested columns.
 
 `<Columns>` attributes:
 
 | Attribute | Type | Notes |
 | --- | --- | --- |
 | `gap` | number | 12-150 pixels |
-| `widths` | string | Comma-separated percentages, usually `"50,50"` or `"40,60"` |
+| `widths` | string | Comma-separated percentages matching the number of columns, such as `"50,50"`, `"33,33,34"`, or `"25,25,25,25"` |
 | `verticalAlignment` | enum | `top`, `middle`, `bottom` |
 | `stackOnMobile` | boolean | |
 | `reverseOnMobile` | boolean | |
@@ -461,10 +461,11 @@ If a user asks for fallback behavior in LMX output, mention that the LMX markup 
 | `{firstName}` in LMX | Use `{contact.firstName}` |
 | `{contact.firstName|there}` or similar fallback syntax | No inline fallback syntax exists in LMX; configure fallbacks outside the LMX string |
 | `<Image src="{contact.imageUrl}" />` | Use static `src` plus `dynamicSrc="{contact.imageUrl}"` |
-| `<Columns>` with one or three `<ColumnItem>` children | Use exactly two `<ColumnItem>` children |
+| `<Columns>` with one or more than four `<ColumnItem>` children | Use two to four `<ColumnItem>` children |
 | `<Icon color="#f00" />` | Set `color` on `<Icons>` and use one of the allowed colors |
 | `<Icons color="#334155">` | Use `#000000`, `#808080`, or `#ffffff` |
 | Two `<Style />` tags | Use only one |
+| Adjacent top-level `<Section>` siblings with no spacer | Add a line-break spacer between sections unless the user explicitly specified a different spacing treatment |
 | Unescaped `<` or `&` in text | Use `&lt;` and `&amp;` |
 | Manual legal footer, postal address, or unsubscribe block | Omit it; Loops adds required footer content automatically. A branded footer component can appear above it |
 

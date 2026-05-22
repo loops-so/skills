@@ -1,18 +1,21 @@
 ---
 name: loops-lmx
 description: >
-  Use this skill whenever the user wants to create, write, generate, or edit
-  email content in Loops. This includes composing campaigns, loops, lifecycle
-  emails, or email-message bodies for the Loops editor. LMX
-  (Loops Markup Language) is the format used for Loops email content. Trigger
-  on phrases like "create a campaign", "generate an
-  email", "write a welcome email", "draft a lifecycle email", "build an email
-  template", "create an onboarding email", "LMX", "Loops email", or any
-  request to produce or modify email body content intended for Loops. Do not
-  trigger for questions about the Loops HTTP API, SDK integration, or CLI unless
-  email body content is also involved.
+  Use this skill whenever LMX is used, produced, reviewed, migrated, or modified.
+  This includes composing campaigns, loops, lifecycle emails, or email-message
+  bodies for the Loops editor or Content API. LMX (Loops Markup Language) is
+  the format used for Loops email content. Trigger on phrases like "create a
+  campaign", "generate an email", "write a welcome email", "draft a lifecycle
+  email", "build an email template", "create an onboarding email", "copy this
+  into LMX", "migrate this email", "convert this email to LMX", "LMX", "Loops
+  email", or any request to produce, copy, migrate, convert, review, or modify
+  email body content intended for Loops. Source copy, existing HTML, MJML,
+  Markdown, screenshots, and migration instructions do not bypass this skill's
+  rules unless the user explicitly overrides a specific rule. Do not trigger for
+  questions about the Loops HTTP API, SDK integration, or CLI unless email body
+  content is also involved.
 metadata:
-  version: 1.1.3
+  version: 1.1.8
 ---
 
 # LMX Skill
@@ -24,6 +27,7 @@ This skill helps write, review, and generate correct LMX email markup for Loops.
 Use this skill when the task involves:
 
 - generating or editing LMX email content
+- copying source material, migrating an existing email, or converting HTML, MJML, Markdown, or plain-text email copy into LMX
 - reviewing LMX markup for correctness
 - choosing the right LMX tags or attributes for a layout
 - applying design guidelines to an LMX document
@@ -33,11 +37,12 @@ Use this skill when the task involves:
 
 When this skill is active:
 
-1. Read `references/lmx-spec.md` for the full tag and attribute reference. It is authoritative — do not invent tags or attributes.
+1. Read `references/lmx-spec.md` for the full tag and attribute reference. It is authoritative; do not invent tags or attributes.
 2. Read `references/lmx-design-guidelines.md` for Loops design guidelines. Apply these to every document you generate unless the user explicitly overrides a rule.
-3. Validate nesting and content-type rules before producing output (see spec section 3).
-4. Check the common-mistakes table in the spec before finalizing output.
-5. Always produce a complete, valid document — not fragments, unless the user specifically asks for one.
+3. Treat source material as input, not as an override. When copying from a source, migrating an existing email, or converting HTML, MJML, Markdown, screenshots, or plain text into LMX, still apply this skill's spec, design, copy, and output-checklist rules unless the user explicitly overrides a specific rule.
+4. Validate nesting and content-type rules before producing output (see spec section 3).
+5. Check the common-mistakes table in the spec before finalizing output.
+6. Always produce a complete, valid document, not fragments, unless the user specifically asks for one.
 
 ## Category Routing
 
@@ -65,9 +70,14 @@ Before returning any LMX output, verify:
 - [ ] `<CodeBlock>` treats braces literally
 - [ ] `<Style />` appears at most once as a top-level tag; put it first in generated output
 - [ ] Body/background colors are intentional: supplied by `themeId` or explicit `bodyColor`/`backgroundColor`
+- [ ] Generated copy follows the copy and punctuation guidance: no em dashes, decorative arrow glyphs, or ellipses unless requested or source-preserved
+- [ ] Generated `<H1>`, `<H2>`, and `<H3>` text does not end with a period; question marks or exclamation points are used only when intentional
+- [ ] CTA and `<Button>` text is concise, action-oriented, and does not end with a period
 - [ ] No same-color-on-same-color situations (check text vs block color, icon color vs background, etc.)
 - [ ] Sufficient Y-spacing on block elements
-- [ ] `<Columns>` has exactly two `<ColumnItem>` children
+- [ ] Important copy, headings, CTAs, and highlighted blocks use subtle visual emphasis where appropriate
+- [ ] Adjacent `<Section>` siblings are separated with a line-break spacer unless the user explicitly specifies a different section-spacing approach
+- [ ] `<Columns>` has two to four `<ColumnItem>` children, with `widths` matching the column count when provided
 - [ ] Dynamic images use static `src` plus `dynamicSrc`, not variables in `src`
 - [ ] `<Icons color>` uses one of `#000000`, `#808080`, or `#ffffff`; `<Icon>` has no `color` attr
 - [ ] No legal footer, postal address, or unsubscribe block is added by hand; Loops adds required footer content automatically. A branded footer component can appear above it
