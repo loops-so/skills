@@ -79,6 +79,7 @@ Use this skill when you need to:
 - read mailing lists and update mailing-list membership
 - send Loops events from backend code
 - send transactional emails with the API or SDKs
+- create draft campaigns and update email-message content
 - choose between official SDKs and raw HTTP requests
 - handle rate limits, idempotency keys, and server-side-only constraints
 
@@ -98,6 +99,8 @@ Use this skill when you need to:
 - authenticate from the terminal and manage stored team keys
 - validate credentials with the CLI
 - run one-off contact, list, event, or transactional-email commands
+- create draft campaigns and update email-message content from the shell
+- list themes and components for LMX authoring
 - inspect CLI output in text or JSON from the shell
 
 Example prompts:
@@ -139,7 +142,7 @@ Example prompts:
 
 - "Write a product update campaign in LMX."
 - "Convert this lifecycle email copy into Loops LMX."
-- "Review this LMX for Content API compatibility."
+- "Review this LMX for compatibility."
 
 Skill file: [skills/loops-lmx/SKILL.md](./skills/loops-lmx/SKILL.md)
 
@@ -148,7 +151,7 @@ Skill file: [skills/loops-lmx/SKILL.md](./skills/loops-lmx/SKILL.md)
 - This repo is maintained by Loops.
 - The Loops CLI has its own skill in this repo.
 - The Loops CLI itself is still pre-release and may change faster than the API and SDK docs.
-- The LMX skill tracks documented LMX behavior in the Loops editor and Content API.
+- The LMX skill tracks documented LMX behavior in the Loops editor and campaign editing API endpoints.
 
 ## Versioning And Releases
 

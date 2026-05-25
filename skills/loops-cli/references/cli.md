@@ -12,10 +12,11 @@
 
 ## Source URLs
 
+- https://loops.so/docs/cli
 - https://github.com/loops-so/cli
 - https://github.com/loops-so/cli/blob/main/README.md
 
-Use `loops agent-context` when you need exact flags or the latest command shape.
+Use `loops agent-context` when you need exact flags or the latest command shape. Requires a recent CLI build (v0.5.0+).
 
 ## When To Use The CLI
 
@@ -133,6 +134,15 @@ loops api-key --output json
 ```
 
 Use this for a quick API-key check against the resolved config.
+
+### Agent discovery
+
+```bash
+loops agent-context
+loops version
+```
+
+`agent-context` prints JSON describing every command, subcommand, and flag — useful when this reference is behind the installed CLI version.
 
 ### Contacts
 
@@ -259,10 +269,90 @@ loops send --id cll42l54f20i1la0lfooe3z12 --email user@example.com -v resetLink=
 
 This is the same transactional send flow as `loops transactional send`.
 
+### Campaigns
+
+Create and edit campaigns.
+
+A sending domain must be configured before creating campaigns.
+
+```bash
+# List (auto-paginates unless --cursor is set)
+loops campaigns list
+loops campaigns list --per-page 20 --output json
+loops campaigns list --pick   # interactive fzf picker; copies IDs to clipboard
+
+# Create a draft campaign (prints campaignId, emailMessageId, contentRevisionId)
+loops campaigns create --name "Spring product announcement"
+
+# Get or rename a draft campaign
+loops campaigns get <campaignId>
+loops campaigns update <campaignId> --name "Renamed announcement"
+```
+
+Useful campaign flags:
+
+- `--name` / `-n` (required on create and update)
+- `--per-page`, `--cursor` (list)
+- `--pick` (list; requires fzf; cannot combine with `--output json`)
+
+### Email messages
+
+```bash
+# Get message fields and syntax-highlighted LMX
+loops email-messages get <emailMessageId>
+loops email-messages get <emailMessageId> --output json
+
+# Update draft content (requires a revision flag and at least one field)
+loops email-messages update <emailMessageId> \
+  --expected-revision-id rev_123 \
+  --subject "Big spring updates" \
+  --preview-text "A quick look at what's new" \
+  --from-name "Loops" \
+  --from-email hello \
+  --reply-to support@example.com \
+  --lmx-file ./email.lmx
+
+# Or fetch the latest revision automatically (overwrites concurrent edits)
+loops email-messages update <emailMessageId> --force --lmx-file ./email.lmx
+```
+
+Useful email-message flags:
+
+- `--expected-revision-id` / `-r` — pass `contentRevisionId` from a prior `get` or `campaigns create` (mutually exclusive with `--force`)
+- `--force` / `-f` — fetch the current revision and use it
+- `--subject`, `--preview-text`, `--from-name`, `--from-email`, `--reply-to`
+- `--lmx` or `--lmx-file` (mutually exclusive)
+
+`--from-email` accepts a username only; if you pass `hello@example.com`, the CLI keeps `hello`.
+
+After a successful update, text output may include LMX `warnings`. JSON output includes them on the response object.
+
+### Themes
+
+```bash
+loops themes list
+loops themes list --pick
+loops themes get <themeId>
+```
+
+Use theme IDs in LMX as `<Style themeId="..." />`. `themes get` prints style fields for reference.
+
+### Components
+
+```bash
+loops components list
+loops components list --pick
+loops components get <componentId>
+```
+
+Use component IDs in LMX as `<Component componentId="..." />`. `components get` prints the component LMX body.
+
 ## Practical Guidance
 
 - Use `--output json` when the CLI output needs to feed another program.
 - Use named keys plus `loops auth use` when switching between Loops teams regularly.
 - Use `--team` when you want to override the active stored key for a single command.
 - Use `--debug` when you need to inspect request behavior from the terminal.
+- For campaign editing, save `contentRevisionId` from `campaigns create` or `email-messages get`, then pass it to `email-messages update --expected-revision-id`. Use `--force` only when overwriting concurrent edits is acceptable.
+- Use `--lmx-file` for non-trivial LMX bodies; pair with the `loops-lmx` skill for valid markup.
 - If the user needs an exact flag or command not covered here, fall back to `loops agent-context`.

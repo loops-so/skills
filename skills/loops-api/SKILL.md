@@ -4,14 +4,16 @@ description: >
   Use this skill whenever the user wants to integrate Loops from application
   code, backend services, webhook handlers, or server-side automation. This
   includes the Loops HTTP API and official SDKs for server-side contact,
-  contact-property, mailing-list, event, API-key-validation, and
-  transactional-email workflows. Trigger on phrases like "Loops API", "Loops
-  SDK", "send a Loops event from my app", "add a contact to Loops in a
-  webhook", "send a transactional email from backend code", or any time the
-  user wants to integrate Loops into their app, backend, webhook, or
-  automation. Do not trigger for CLI or shell-only requests.
+  contact-property, mailing-list, event, API-key-validation,
+  transactional-email, content editing workflows (campaigns, email messages,
+  themes, and components). Trigger on phrases like "Loops API",
+  "Loops SDK", "create a campaign via API", "update email message LMX",
+  "send a Loops event from my app", "add a contact to Loops in a webhook",
+  "send a transactional email from backend code", or any time the user wants to
+  integrate Loops into their app, backend, webhook, or automation. Do not
+  trigger for CLI or shell-only requests.
 metadata:
-  version: 1.2.3
+  version: 1.3.0
 ---
 
 # Loops API and SDK Skill
@@ -25,6 +27,8 @@ Use this skill when the user needs to:
 - integrate Loops into an app, backend, webhook, or automation
 - decide between official SDKs and raw HTTP
 - manage contacts, contact properties, mailing lists, events, or transactional email
+- create draft campaigns and update email-message content (subject, sender, LMX)
+- list themes and components to build LMX payloads
 - validate credentials or troubleshoot Loops request behavior from code
 
 This skill is for implementation and operational usage, not broad email strategy or deliverability review.
@@ -44,6 +48,7 @@ Official references:
 
 - Docs: `https://loops.so/docs`
 - API reference: `https://loops.so/docs/api-reference/intro`
+- Campaign examples: `https://loops.so/docs/api-reference/examples/campaigns`
 - JavaScript SDK: `https://loops.so/docs/sdks/javascript`
 - OpenAPI spec: `https://app.loops.so/openapi.json`
 
@@ -62,6 +67,8 @@ If the user is working from the terminal instead of writing application code, us
 
 - Auth, base URL, rate limits, contacts, properties, lists, events, transactional payloads, SDK examples, and HTTP errors:
   Read `references/http-api.md`
+- Campaigns, email messages, themes, and components:
+  Read `references/http-api.md`. For LMX markup itself, also use the `loops-lmx` skill.
 
 ## Output Checklist
 

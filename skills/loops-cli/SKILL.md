@@ -4,13 +4,15 @@ description: >
   Use this skill whenever the user wants to work with the Loops CLI from the
   terminal. This includes installing or updating the CLI, authenticating,
   storing and selecting API keys, validating credentials, and running commands
-  for contacts, contact properties, lists, events, and transactional email.
-  Trigger on phrases like "Loops CLI", "loops auth login", "loops contacts
-  create", "loops contacts update", "loops events send", "loops transactional
-  send", "loops api-key", "brew install loops-so/tap/loops", or any time the
-  user wants to use Loops from the shell instead of application code.
+  for contacts, contact properties, lists, events, transactional email,
+  campaigns, email messages, themes, and components. Trigger on phrases like
+  "Loops CLI", "loops auth login", "loops campaigns create", "loops
+  email-messages update", "loops themes list", "loops components get", "loops
+  contacts create", "loops events send", "loops transactional send", "loops
+  api-key", "loops agent-context", "brew install loops-so/tap/loops", or any
+  time the user wants to use Loops from the shell instead of application code.
 metadata:
-  version: 1.0.0
+  version: 1.1.0
 ---
 
 # Loops CLI Skill
@@ -25,6 +27,8 @@ Use this skill when the user needs to:
 - authenticate with Loops from the terminal
 - manage stored team keys or switch between them
 - run one-off contact, list, event, or transactional-email commands
+- create draft campaigns and update email-message content from the shell
+- list or inspect themes and reusable components for LMX
 - inspect CLI output in text or JSON locally
 
 This skill is for command-line usage, not application integrations or email-strategy review.
@@ -42,6 +46,7 @@ When this skill is active:
 
 Official references:
 
+- CLI docs: `https://loops.so/docs/cli`
 - CLI repo: `https://github.com/loops-so/cli`
 - CLI README: `https://github.com/loops-so/cli/blob/main/README.md`
 
@@ -49,6 +54,10 @@ Official references:
 
 - Installation, auth flows, config resolution, global flags, and common Loops CLI workflows:
   Read `references/cli.md`
+- Campaigns, email messages, themes, components, revision handling, and LMX file flags:
+  Read `references/cli.md`. For LMX markup itself, also use the `loops-lmx` skill.
+
+If the task becomes application-code integration or exact HTTP payload design beyond the CLI, use the `loops-api` skill.
 
 ## Output Checklist
 
@@ -57,4 +66,4 @@ Aim to leave the user with:
 - the right command or install path for the task
 - any auth or team-selection caveats that affect behavior
 - safe handling of credentials
-- the next validation step, such as `loops --help`, `loops auth status`, or `loops api-key`
+- the next validation step, such as `loops --help`, `loops auth status`, `loops api-key`, or `loops agent-context`

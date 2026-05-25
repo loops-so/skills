@@ -15,7 +15,7 @@ description: >
   questions about the Loops HTTP API, SDK integration, or CLI unless email body
   content is also involved.
 metadata:
-  version: 1.1.7
+  version: 1.1.8
 ---
 
 # LMX Skill
@@ -51,6 +51,9 @@ When this skill is active:
 
 - Color contrast, spacing, column rounded corners, Style tag usage, visual hierarchy, or any "how should this look" question:
   Read `references/lmx-design-guidelines.md`
+
+- Creating campaigns, posting LMX via the API, revision IDs, themes, components, or image uploads:
+  Use the `loops-api` skill (HTTP) or `loops-cli` skill (terminal). This skill covers the LMX document itself.
 
 ## Output Checklist
 

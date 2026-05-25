@@ -15,6 +15,7 @@
 ## Source URLs
 
 - https://loops.so/docs/api-reference/intro
+- https://loops.so/docs/api-reference/examples/campaigns
 - https://loops.so/docs/sdks/javascript
 - https://loops.so/docs/sdks/nuxt
 - https://loops.so/docs/sdks/php
@@ -289,29 +290,136 @@ Attachments must be enabled on your account before use. Contact `help@loops.so` 
 
 Supports the `Idempotency-Key` header the same way as events.
 
-### Content API Email Messages
+### Creating and editing campaigns
 
-#### Update an email message
+The API lets you create draft campaigns and set email-message content (subject, sender, preview text, LMX) from code.
+
+A sending domain must be configured before creating campaigns or reading email messages. Campaign and email-message writes only work while the campaign is in **Draft** status.
+
+For LMX markup rules and design guidance, use the separate `loops-lmx` skill. Copy/paste workflow examples: [Campaigns API examples](https://loops.so/docs/api-reference/examples/campaigns).
+
+#### Typical workflow
+
+1. `POST /v1/campaigns` with `{ "name": "..." }` — saves `emailMessageId` and `emailMessageContentRevisionId`.
+2. `GET /v1/themes` and `GET /v1/components` — discover `themeId` and `componentId` values for LMX.
+3. `POST /v1/email-messages/{emailMessageId}` — set subject, sender fields, and `lmx`; pass `emailMessageContentRevisionId` as `expectedRevisionId` on the first update.
+4. After each successful update, save the returned `contentRevisionId` and pass it as `expectedRevisionId` on the next update to avoid `409 Conflict` from stale revisions.
+
+#### Campaigns
+
+##### List campaigns
 
 ```
-POST /email-messages/{emailMessageId}
+GET /v1/campaigns?perPage=20&cursor=...
 ```
 
-Use this for draft campaign email messages when setting subject, preview text, sender, and LMX content. Include `expectedRevisionId` from the latest `contentRevisionId` to avoid stale writes. For the first update after `POST /campaigns`, use the returned `emailMessageContentRevisionId`.
+`perPage` must be between 10 and 50 (default 20). Returns paginated `data` with `campaignId`, `emailMessageId`, `name`, `subject`, `status`, and timestamps. Status values include `Draft`, `Scheduled`, `Sending`, and `Sent`.
+
+##### Create a campaign
+
+```
+POST /v1/campaigns
+```
+
+Only `name` is required. Creates a draft campaign and an empty email message in one request.
+
+```jsonc
+{
+  "name": "Spring product announcement"
+}
+```
+
+Returns `201` with `campaignId`, `emailMessageId`, and `emailMessageContentRevisionId`. Save both IDs and the revision ID for the first email-message update.
+
+##### Get a campaign
+
+```
+GET /v1/campaigns/{campaignId}
+```
+
+##### Update a campaign
+
+```
+POST /v1/campaigns/{campaignId}
+```
+
+Updates the draft campaign name only. Returns `409` if the campaign is not in draft status.
+
+```jsonc
+{
+  "name": "Renamed announcement"
+}
+```
+
+#### Email messages
+
+##### Get an email message
+
+```
+GET /v1/email-messages/{emailMessageId}
+```
+
+Returns subject, preview text, sender fields, `lmx`, `contentRevisionId`, and `campaignId`. Returns `409` if the message uses legacy MJML format or content cannot be parsed.
+
+##### Update an email message
+
+```
+POST /v1/email-messages/{emailMessageId}
+```
+
+Updates draft email-message fields. All body fields are optional in the schema, but you should send the fields you intend to change together with a valid `expectedRevisionId`.
 
 ```jsonc
 {
   "expectedRevisionId": "rev_123",
-  "subject": "Welcome",
-  "previewText": "A quick start guide",
+  "subject": "Big spring updates",
+  "previewText": "A quick look at what's new",
   "fromName": "Loops",
-  "fromEmail": "updates",
+  "fromEmail": "hello",
   "replyToEmail": "support@example.com",
-  "lmx": "<Paragraph>Hello</Paragraph>"
+  "lmx": "<Style themeId=\"default\" />\n<Paragraph><Text>Hey there.</Text></Paragraph>\n<Component componentId=\"logo\" />"
 }
 ```
 
-`fromEmail` is the sender username only, without `@` or a domain. The team's sending domain is appended automatically. LMX compile failures, including missing required LMX attributes such as `<Image src>`, `<Component componentId>`, `<Icon name>`, or `<Link href>`, return HTTP 422.
+`fromEmail` is the sender username only, without `@` or a domain. The team's sending domain is appended automatically.
+
+On success, the response includes a new `contentRevisionId` and may include non-fatal `warnings` from LMX compilation. LMX compile failures (invalid tags, missing required attributes such as `<Image src>`, `<Component componentId>`, `<Icon name>`, or `<Link href>`) return HTTP `422`. LMX payloads larger than **100 KB** return HTTP `413`.
+
+#### Themes
+
+##### List themes
+
+```
+GET /v1/themes?perPage=20&cursor=...
+```
+
+Returns paginated themes (most recently created first). Use `themeId` in `<Style themeId="..." />`.
+
+##### Get a theme
+
+```
+GET /v1/themes/{themeId}
+```
+
+Returns theme metadata and style values (colors, fonts, button styles, etc.) for reference when building LMX.
+
+#### Components
+
+##### List components
+
+```
+GET /v1/components?perPage=20&cursor=...
+```
+
+Returns paginated reusable components. Use `componentId` in `<Component componentId="..." />`.
+
+##### Get a component
+
+```
+GET /v1/components/{componentId}
+```
+
+Returns `componentId`, `name`, and the component body as LMX.
 
 ---
 
@@ -344,6 +452,54 @@ await loops.sendTransactionalEmail({
   email: "user@example.com",
   dataVariables: { resetLink: "https://yourapp.com/reset?token=abc" },
 });
+```
+
+### Creating and editing a campaign
+
+```javascript
+const headers = {
+  Authorization: `Bearer ${process.env.LOOPS_API_KEY}`,
+  "Content-Type": "application/json",
+};
+
+const created = await fetch("https://app.loops.so/api/v1/campaigns", {
+  method: "POST",
+  headers,
+  body: JSON.stringify({ name: "Spring product announcement" }),
+}).then((r) => r.json());
+
+const [themes, components] = await Promise.all([
+  fetch("https://app.loops.so/api/v1/themes?perPage=20", { headers }).then((r) =>
+    r.json()
+  ),
+  fetch("https://app.loops.so/api/v1/components?perPage=20", { headers }).then(
+    (r) => r.json()
+  ),
+]);
+
+const lmx = `
+<Style themeId="default" />
+<Paragraph><Text>Hey there, here is what's new.</Text></Paragraph>
+<Component componentId="logo" />`;
+
+const updated = await fetch(
+  `https://app.loops.so/api/v1/email-messages/${created.emailMessageId}`,
+  {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      expectedRevisionId: created.emailMessageContentRevisionId,
+      subject: "Big spring updates",
+      previewText: "A quick look at what's new",
+      fromName: "Loops",
+      fromEmail: "hello",
+      replyToEmail: "support@example.com",
+      lmx,
+    }),
+  }
+).then((r) => r.json());
+
+// Save updated.contentRevisionId for the next update.
 ```
 
 ### Next.js App Router event send
@@ -458,8 +614,9 @@ curl -X POST https://app.loops.so/api/v1/contacts/create \
 | --- | --- | --- |
 | 401 | Invalid API key | Check the key is correct and has not been revoked |
 | 400 | Bad request | Check required fields and value types |
-| 404 | Not found | Contact, transactional email, or email message ID does not exist |
-| 409 | Conflict | Email or userId already exists, idempotency key was reused, campaign is not draft, content cannot be parsed, or `expectedRevisionId` is stale |
+| 404 | Not found | Contact, transactional email, campaign, theme, component, or email message ID does not exist |
+| 409 | Conflict | Email or userId already exists, idempotency key was reused, campaign is not draft, email message uses MJML or content cannot be parsed, or `expectedRevisionId` is stale |
+| 413 | Payload too large | LMX body exceeds 100 KB |
 | 422 | LMX failed to compile | Fix invalid LMX, missing required LMX attributes, or XML escaping |
 | 429 | Rate limited | Back off and retry |
 | CORS error | Client-side request | Move the API call to your server |
@@ -474,6 +631,9 @@ Most v1 contact, event, and transactional request body string values are limited
 - **`addToAudience` on transactional**: Setting this to `true` when sending a transactional email will make sure the recipient is added to the audience for marketing emails.
 - **Finding your `transactionalId`**: Go to the Loops dashboard -> Transactional, or call `GET /v1/transactional`.
 - **`fromEmail` on email messages**: Pass only the sender username, such as `"updates"`, not `"updates@example.com"`.
+- **Content revision IDs**: After `POST /v1/campaigns`, use `emailMessageContentRevisionId` as the first `expectedRevisionId`. After each `POST /v1/email-messages/{id}`, save `contentRevisionId` for the next update.
+- **Themes and components before LMX**: List themes and components first so `<Style themeId="..." />` and `<Component componentId="..." />` reference real IDs.
+- **Draft-only writes**: Campaign and email-message updates return `409` once a campaign leaves draft status.
 - **Mailing list membership**: Pass `{ "list_id": true }` to subscribe and `{ "list_id": false }` to unsubscribe.
 - **Event name matching**: The `eventName` must match the configured Loops trigger exactly.
 - **Idempotency keys**: Use these any time an operation could be retried, such as webhook handlers or confirmation flows.
