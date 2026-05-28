@@ -16,16 +16,16 @@ This README only documents the Loops-specific install commands.
 
 ```bash
 # See what this repo contains
-npx skills add https://github.com/Loops-so/skills --list
+npx skills add loops-so/skills --list
 
 # Install all Loops skills globally (recommended)
-npx skills add https://github.com/Loops-so/skills --global
+npx skills add loops-so/skills --global
 
 # Install specific Loops skills globally
-npx skills add https://github.com/Loops-so/skills --global --skill loops-api
-npx skills add https://github.com/Loops-so/skills --global --skill loops-cli
-npx skills add https://github.com/Loops-so/skills --global --skill loops-lmx
-npx skills add https://github.com/Loops-so/skills --global --skill loops-email-sending-best-practices
+npx skills add loops-so/skills --global --skill loops-api
+npx skills add loops-so/skills --global --skill loops-cli
+npx skills add loops-so/skills --global --skill loops-lmx
+npx skills add loops-so/skills --global --skill loops-email-sending-best-practices
 ```
 
 Project-level installs are also supported. Omit `--global` if you want the skills scoped to the current repository instead of user-level.
@@ -35,7 +35,7 @@ Project-level installs are also supported. Omit `--global` if you want the skill
 This repo is versioned with GitHub Releases. For stable installs, pin a release tag instead of installing from the default branch:
 
 ```bash
-npx skills add https://github.com/Loops-so/skills#v1.0.0 --global
+npx skills add loops-so/skills#v1.0.0 --global
 ```
 
 ### Upgrading From Unprefixed Skill Names
@@ -171,7 +171,7 @@ This repo is the installable Loops entry point for agent skills. When product be
 - API reference: https://loops.so/docs/api-reference/intro
 - JavaScript SDK: https://loops.so/docs/sdks/javascript
 - OpenAPI spec: https://app.loops.so/openapi.json
-- CLI repo: https://github.com/Loops-so/cli
+- CLI repo: https://github.com/loops-so/cli
 
 ## Contributing
 
@@ -187,7 +187,7 @@ When updating a skill:
 ## Local Validation
 
 ```bash
-git clone https://github.com/Loops-so/skills.git
+git clone https://github.com/loops-so/skills.git
 cd skills
 npx skills add . --list
 ```
