@@ -1,12 +1,12 @@
-# Loops Agent Skills
+# Loops Agent Skills and Plugin
 
-Official installable Loops skills for AI coding agents.
+Official installable Loops skills and plugin for AI coding agents.
 
 This repository packages `SKILL.md`-based skills for working with Loops. It is intended to help agents use the Loops API, official SDKs, the Loops CLI, LMX email markup, and email-sending best practices more accurately.
 
 These skills are designed for agent environments that support installable skills, such as Claude Code, Codex, Cursor, and other tools that work with the `skills` CLI.
 
-## Install
+## Install skills
 
 For `skills` CLI setup, agent-specific install targets, and the full list of flags, use the official docs:
 
@@ -45,6 +45,42 @@ Older installs used the unprefixed skill names `api`, `cli`, `email-sending-best
 ```bash
 npx skills remove api cli email-sending-best-practices lmx --global
 ```
+
+## Plugin
+
+Thie repo can also be installed as a Plugin in certain agent environments.
+
+### Cursor
+
+Install from the [Cursor Marketplace](https://cursor.com/marketplace), or with
+
+```bash
+/add-plugin loops
+```
+
+### Codex
+
+Install from GitHub:
+
+```bash
+codex plugin marketplace add loops-so/skills
+```
+
+### Claude Code
+
+**Settings → Customize → Connectors** and search for “loops, or with
+
+```bash
+/plugin install loops@claude-plugins-official
+```
+
+### How to invoke plugin skills
+
+| Platform        | Typical invocation                                                                                       |
+| --------------- | -------------------------------------------------------------------------------------------------------- |
+| **Claude Code** | `/loops:loops-api`, `/loops:loops-cli`, `/loops:loops-lmx`, `/loops:loops-email-sending-best-practices`  |
+| **Cursor**      | `/loops-api`, `/loops-cli`, `/loops-lmx`, `/loops-email-sending-best-practices` in Agent chat (type `/`) |
+| **Codex**       | Describe the task, or `@loops` / `@` and choose a skill                                                  |
 
 ## Verify Install
 

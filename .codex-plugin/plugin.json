@@ -1,0 +1,39 @@
+{
+  "name": "loops",
+  "version": "0.1.0",
+  "description": "Send emails, manage contacts, and trigger events with Loops — the email platform for SaaS.",
+  "author": {
+    "name": "Loops",
+    "email": "support@loops.so",
+    "url": "https://loops.so"
+  },
+  "homepage": "https://loops.so/agents",
+  "repository": "https://github.com/loops-so/skills",
+  "license": "MIT",
+  "keywords": [
+    "loops",
+    "email",
+    "saas",
+    "transactional-email",
+    "contacts",
+    "events",
+    "lmx",
+    "deliverability"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Loops",
+    "shortDescription": "Skills for Loops API, CLI, LMX email markup, and deliverability.",
+    "longDescription": "Bundle reusable skills for integrating Loops from application code, using the Loops CLI, authoring LMX email content, and email sending best practices.",
+    "developerName": "Loops",
+    "category": "Productivity",
+    "websiteURL": "https://loops.so",
+    "brandColor": "#FC5200",
+    "logo": "./assets/logo.svg",
+    "defaultPrompt": [
+      "Add a contact to Loops from my backend.",
+      "Send a transactional email with the Loops API.",
+      "Write a welcome email in LMX for Loops."
+    ]
+  }
+}

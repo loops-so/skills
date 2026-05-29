@@ -1,0 +1,23 @@
+{
+  "name": "loops",
+  "description": "Send emails, manage contacts, and trigger events with Loops — the email platform for SaaS.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Loops",
+    "email": "support@loops.so"
+  },
+  "homepage": "https://loops.so/agents",
+  "repository": "https://github.com/loops-so/skills",
+  "license": "MIT",
+  "skills": "./skills/",
+  "keywords": [
+    "loops",
+    "email",
+    "saas",
+    "transactional-email",
+    "contacts",
+    "events",
+    "lmx",
+    "deliverability"
+  ]
+}
