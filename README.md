@@ -116,6 +116,7 @@ Use this skill when you need to:
 - send Loops events from backend code
 - send transactional emails with the API or SDKs
 - create draft campaigns and update email-message content
+- upload images for use in email LMX content
 - choose between official SDKs and raw HTTP requests
 - handle rate limits, idempotency keys, and server-side-only constraints
 
@@ -135,7 +136,7 @@ Use this skill when you need to:
 - authenticate from the terminal and manage stored team keys
 - validate credentials with the CLI
 - run one-off contact, list, event, or transactional-email commands
-- create draft campaigns and update email-message content from the shell
+- create draft campaigns, update email-message content and upload images from the shell
 - list themes and components for LMX authoring
 - inspect CLI output in text or JSON from the shell
 

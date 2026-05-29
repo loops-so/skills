@@ -5,8 +5,8 @@ description: >
   terminal. This includes installing or updating the CLI, authenticating,
   storing and selecting API keys, validating credentials, and running commands
   for contacts, contact properties, lists, events, transactional email,
-  campaigns, email messages, themes, and components. Trigger on phrases like
-  "Loops CLI", "loops auth login", "loops campaigns create", "loops
+  campaigns, email messages, themes, components, and uploads. Trigger on phrases like
+  "Loops CLI", "loops auth login", "loops campaigns create", "loops uploads create", "loops
   email-messages update", "loops themes list", "loops components get", "loops
   contacts create", "loops events send", "loops transactional send", "loops
   api-key", "loops agent-context", "brew install loops-so/tap/loops", or any
@@ -27,7 +27,7 @@ Use this skill when the user needs to:
 - authenticate with Loops from the terminal
 - manage stored team keys or switch between them
 - run one-off contact, list, event, or transactional-email commands
-- create draft campaigns and update email-message content from the shell
+- create draft campaigns, update email-message content and upload images from the shell
 - list or inspect themes and reusable components for LMX
 - inspect CLI output in text or JSON locally
 
