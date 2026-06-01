@@ -145,6 +145,19 @@ POST /v1/contacts/delete
 
 Provide exactly one of `email` or `userId`, not both.
 
+#### Contact suppression status and removal
+
+```
+GET /v1/contacts/suppression?email=user%40example.com
+GET /v1/contacts/suppression?userId=usr_123
+DELETE /v1/contacts/suppression?email=user%40example.com
+DELETE /v1/contacts/suppression?userId=usr_123
+```
+
+Use the `GET` endpoint to inspect suppression state and current removal quota (`limit` and `remaining`).
+Use the `DELETE` endpoint to remove a suppressed contact by `email` or `userId`.
+Both endpoints require exactly one identifier (`email` or `userId`).
+
 ### Contact Properties
 
 #### List properties
@@ -421,6 +434,33 @@ GET /v1/components/{componentId}
 
 Returns `componentId`, `name`, and the component body as LMX.
 
+#### Uploads
+
+Use uploads to add image assets for LMX and email content.
+
+##### Create an upload
+
+```
+POST /v1/uploads
+```
+
+```jsonc
+{
+  "contentType": "image/png",
+  "contentLength": 102400
+}
+```
+
+Returns `emailAssetId` and a `presignedUrl`. Upload the file with HTTP `PUT` to the returned `presignedUrl`, using the same `Content-Type` and `Content-Length` values.
+
+##### Complete an upload
+
+```
+POST /v1/uploads/{id}/complete
+```
+
+Use the returned `emailAssetId` as `{id}` to finalize. Success returns `finalUrl`, which you can use in LMX image attributes.
+
 ---
 
 ## Code Examples
@@ -477,9 +517,41 @@ const [themes, components] = await Promise.all([
   ),
 ]);
 
+// Upload an image to Loops and include the image URL in the LMX.
+// Flow: create upload -> PUT to presignedUrl -> complete upload.
+const imageBytes = /* Uint8Array|ArrayBuffer|Buffer */;
+const contentType = "image/png";
+const contentLength = imageBytes.byteLength ?? imageBytes.length;
+
+const createdUpload = await fetch("https://app.loops.so/api/v1/uploads", {
+  method: "POST",
+  headers,
+  body: JSON.stringify({ contentType, contentLength }),
+}).then((r) => r.json());
+
+// Upload the file to the pre-signed URL using HTTP PUT.
+// Important: use the same Content-Type and Content-Length from the create call.
+await fetch(createdUpload.presignedUrl, {
+  method: "PUT",
+  headers: {
+    "Content-Type": contentType,
+    "Content-Length": String(contentLength),
+  },
+  body: imageBytes,
+});
+
+// Finalize the asset and get the public URL.
+const completedUpload = await fetch(
+  `https://app.loops.so/api/v1/uploads/${createdUpload.emailAssetId}/complete`,
+  { method: "POST", headers }
+).then((r) => r.json());
+
+const imageUrl = completedUpload.finalUrl;
+
 const lmx = `
 <Style themeId="default" />
 <Paragraph><Text>Hey there, here is what's new.</Text></Paragraph>
+<Image url="${imageUrl}" alt="New product showcase" />
 <Component componentId="logo" />`;
 
 const updated = await fetch(

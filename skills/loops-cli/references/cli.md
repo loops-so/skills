@@ -347,6 +347,26 @@ loops components get <componentId>
 
 Use component IDs in LMX as `<Component componentId="..." />`. `components get` prints the component LMX body.
 
+### Uploads
+
+Upload files that can be used in email content.
+
+```bash
+loops uploads create ./header.png
+```
+
+Use the returned `finalUrl` in LMX `<Image>` tags.
+
+By default the CLI sniffs the MIME type from the file contents. Override it with `--content-type` if needed:
+
+```bash
+loops uploads create ./header.png --content-type image/png
+```
+
+Useful uploads flags:
+
+- `--content-type` — MIME type to use for the upload (default: sniffed from file contents)
+
 ## Practical Guidance
 
 - Use `--output json` when the CLI output needs to feed another program.
