@@ -15,7 +15,7 @@ description: >
   questions about the Loops HTTP API, SDK integration, or CLI unless email body
   content is also involved.
 metadata:
-  version: 1.1.8
+  version: 1.1.9
 ---
 
 # LMX Skill
