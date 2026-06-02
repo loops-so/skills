@@ -180,6 +180,54 @@ Rounding is fine on standalone blocks (outside `<Columns>`), on `<Button>`, and 
 
 ---
 
+## Centered Pill Labels
+
+When a design calls for a small centered pill, badge, or eyebrow label, use a three-column layout with empty side columns and the pill in the center column. This keeps the pill from stretching full-width while preserving reliable email rendering.
+
+Use `gap="12"` unless there is a reason for more space; `12` is the minimum valid `<Columns>` gap. Keep `stackOnMobile="false"` so the empty side columns continue to center the pill on mobile.
+
+This is a narrow exception to the rounded-column guidance above: only the center column contains a rounded block, and the side columns are empty. Do not use this pattern to fake one connected rounded multi-column card; put the shared background and radius on `<Columns>` for that.
+
+```xml
+<Columns widths="25,50,25" gap="12" stackOnMobile="false">
+  <ColumnItem>
+    <Paragraph><Br /></Paragraph>
+  </ColumnItem>
+
+  <ColumnItem>
+    <Paragraph
+      fontSize="13"
+      lineHeight="140"
+      align="center"
+      blockColor="#eef2ff"
+      blockBorderRadius="999"
+      paddingTop="8"
+      paddingRight="14"
+      paddingBottom="8"
+      paddingLeft="14"
+    >
+      <Text textColor="#4f46e5">
+        <Strong>Stripe</Strong> product announcement
+      </Text>
+    </Paragraph>
+  </ColumnItem>
+
+  <ColumnItem>
+    <Paragraph><Br /></Paragraph>
+  </ColumnItem>
+</Columns>
+```
+
+Key details:
+
+- `widths="25,50,25"` centers the pill by reserving empty side columns.
+- `blockColor` sets the pill background.
+- `blockBorderRadius="999"` makes the pill fully rounded.
+- Side columns need valid block content, so use `<Paragraph><Br /></Paragraph>`.
+- Keep pill text short enough for the center column, or widen the center column with a matching `widths` adjustment such as `20,60,20`.
+
+---
+
 ## Sections For Cards And Groups
 
 Use `<Section>` when a design needs a card, group, or framed content area around multiple related blocks. Put the background, radius, padding, and optional link on the section instead of repeating the same styling on every child block.
