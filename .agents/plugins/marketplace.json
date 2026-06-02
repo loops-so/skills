@@ -1,7 +1,7 @@
 {
-  "name": "loops-plugin",
+  "name": "loops",
   "interface": {
-    "displayName": "Loops Plugin"
+    "displayName": "Loops"
   },
   "plugins": [
     {
