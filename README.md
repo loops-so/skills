@@ -46,6 +46,49 @@ Older installs used the unprefixed skill names `api`, `cli`, `email-sending-best
 npx skills remove api cli email-sending-best-practices lmx --global
 ```
 
+## Plugin
+
+Thie repo can also be installed as a Plugin in certain agent environments.
+
+## Claude Code
+
+Inside Claude CLI:
+
+```bash
+/plugin marketplace add loops-so/skills
+/plugin install loops@loops-plugins
+```
+
+In Claude Code for Desktop:
+
+1. Go to Customize
+1. Hit the `+` button to add a personal plugin. 
+1. Select **Create plugin** and then **Add marketplace**. Select **Add from repository**.
+1. Input `loops-so/skills` and hit **Sync**.
+1. When the UI refreshes, install the Loops plugin with the `+` button.
+
+### Codex
+
+Install via `codex-marketplace`:
+
+```bash
+npx codex-marketplace add loops-so/skills --plugin
+```
+
+Or, pull this repo to your computer and install:
+
+```bash
+git clone https://github.com/loops-so/skills.git /Users/path/to/repo
+codex plugin marketplace add /Users/path/to/repo
+```
+
+### How to invoke plugin skills
+
+| Platform        | Typical invocation                                                                                       |
+| --------------- | -------------------------------------------------------------------------------------------------------- |
+| **Claude Code** | `/loops-api`, `/loops-cli`, `/loops-lmx`, `/loops-email-sending-best-practices`  |
+| **Codex**       | Describe the task, or `@loops` / `@` and choose a skill                                                  |
+
 ## Verify Install
 
 After installation, try a task that should trigger one of the skills:
