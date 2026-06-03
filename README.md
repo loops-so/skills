@@ -52,6 +52,13 @@ Thie repo can also be installed as a Plugin in certain agent environments.
 
 ### Claude Code
 
+With Claude CLI:
+
+```bash
+claude plugin marketplace add loops-so/skills
+claude plugin install loops@loops-plugins
+```
+
 Inside Claude CLI:
 
 ```bash
@@ -59,7 +66,7 @@ Inside Claude CLI:
 /plugin install loops@loops-plugins
 ```
 
-In Claude Code for Desktop:
+In Claude Code (desktop or web):
 
 1. Go to Customize
 1. Hit the `+` button to add a personal plugin. 
