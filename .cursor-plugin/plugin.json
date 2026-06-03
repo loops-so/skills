@@ -10,7 +10,7 @@
   "homepage": "https://loops.so/agents",
   "repository": "https://github.com/loops-so/skills",
   "license": "MIT",
-  "logo": "./assets/logo.svg",
+  "logo": "assets/logo.svg",
   "skills": "./skills/",
   "keywords": [
     "loops",
