@@ -67,6 +67,14 @@ In Claude Code for Desktop:
 1. Input `loops-so/skills` and hit **Sync**.
 1. When the UI refreshes, install the Loops plugin with the `+` button.
 
+## Cursor
+
+In the Cursor desktop app:
+
+1. Go to Settings > Plugins
+1. Paste in this repository URL (`https://github.com/Loops-so/skills`) where it says "Search or Paste Link".
+1. Click the Loops plugin that appears, then **Add to Cursor**. Confirm with **Add Plugin**.
+
 ### Codex
 
 Install via `codex-marketplace`:
@@ -87,6 +95,7 @@ codex plugin marketplace add /Users/path/to/repo
 | Platform        | Typical invocation                                                                                       |
 | --------------- | -------------------------------------------------------------------------------------------------------- |
 | **Claude Code** | `/loops-api`, `/loops-cli`, `/loops-lmx`, `/loops-email-sending-best-practices`  |
+| **Cursor**      | `/loops-api`, `/loops-cli`, `/loops-lmx`, `/loops-email-sending-best-practices` in Agent chat (type `/`) |
 | **Codex**       | Describe the task, or `@loops` / `@` and choose a skill                                                  |
 
 ## Verify Install
