@@ -11,8 +11,8 @@
     {
       "name": "loops",
       "source": {
-        "source": "local",
-        "path": "./"
+        "source": "url",
+        "url": "https://github.com/loops-so/skills.git"
       },
       "policy": {
         "installation": "AVAILABLE",

@@ -50,7 +50,7 @@ npx skills remove api cli email-sending-best-practices lmx --global
 
 Thie repo can also be installed as a Plugin in certain agent environments.
 
-## Claude Code
+### Claude Code
 
 Inside Claude CLI:
 
@@ -67,7 +67,7 @@ In Claude Code for Desktop:
 1. Input `loops-so/skills` and hit **Sync**.
 1. When the UI refreshes, install the Loops plugin with the `+` button.
 
-## Cursor
+### Cursor
 
 In the Cursor desktop app:
 
@@ -77,17 +77,17 @@ In the Cursor desktop app:
 
 ### Codex
 
-Install via `codex-marketplace`:
+Install with the CLI:
+
+```bash
+codex plugin marketplace add loops-so/skills
+codex plugin add loops@loops-plugins
+```
+
+Or install via `codex-marketplace`:
 
 ```bash
 npx codex-marketplace add loops-so/skills --plugin
-```
-
-Or, pull this repo to your computer and install:
-
-```bash
-git clone https://github.com/loops-so/skills.git /Users/path/to/repo
-codex plugin marketplace add /Users/path/to/repo
 ```
 
 ### How to invoke plugin skills
@@ -261,4 +261,7 @@ skills/
   loops-email-sending-best-practices/
     SKILL.md
     references/
+.cursor-plugin/plugin.json       # Cursor install
+.claude-plugin/                  # Claude install
+.agents/plugins/marketplace.json # General/Codex marketplace
 ```
