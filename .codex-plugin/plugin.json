@@ -23,8 +23,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Loops",
-    "shortDescription": "Skills for Loops API, CLI, LMX email markup, and deliverability.",
-    "longDescription": "Bundle reusable skills for integrating Loops from application code, using the Loops CLI, authoring LMX email content, and email sending best practices.",
+    "shortDescription": "Email platform for SaaS.",
+    "longDescription": "Use skills for integrating Loops in your codebase with API, CLI, LMX email markup, and deliverability.",
     "developerName": "Loops",
     "category": "Productivity",
     "websiteURL": "https://loops.so",
