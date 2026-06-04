@@ -79,6 +79,7 @@ Before returning any LMX output, verify:
 - [ ] Important copy, headings, CTAs, and highlighted blocks use subtle visual emphasis where appropriate
 - [ ] `<Section>` is used sparingly for callouts, grouped controls, linked groups, or an explicit card-style layout; ordinary body copy is not wrapped into many floating cards by default
 - [ ] Adjacent `<Section>` siblings are separated with a line-break spacer unless the user explicitly specifies a different section-spacing approach
+- [ ] Adjacent highlighted blocks, including `blockColor` paragraphs, columns, and sections, are separated with visible vertical space unless they are intentionally one connected card
 - [ ] `<Columns>` has two to four `<ColumnItem>` children, with `widths` matching the column count when provided
 - [ ] Dynamic images use static `src` plus `dynamicSrc`, not variables in `src`
 - [ ] `<Icons color>` uses one of `#000000`, `#808080`, or `#ffffff`; `<Icon>` has no `color` attr

@@ -72,6 +72,7 @@ Default approach:
 - `<Divider>`: typically fine without explicit padding, but add `paddingTop="16" paddingBottom="16"` if elements feel crowded.
 - `<Image />`: `paddingBottom="16"` unless immediately followed by a caption paragraph.
 - Adjacent top-level `<Section>` nodes: always add visible space between them. Unless the user explicitly specifies another spacing approach, separate section siblings with a line-break spacer. `<Br />` is inline-only and never top-level, so use a valid block wrapper such as `<Paragraph><Br /></Paragraph>`.
+- Adjacent highlighted siblings: if two consecutive top-level blocks both use `blockColor` (for example a callout `<Paragraph>` followed by a highlighted `<Columns>` card), add visible vertical space between them or consolidate them into one grouped block. A compact valid spacer is `<Paragraph fontSize="12" lineHeight="100"><Br /></Paragraph>`. Only let highlighted blocks touch when the intent is a single connected card.
 
 Use `bodyYPadding` on `<Style />` for global top/bottom padding inside the body. `"16"` to `"32"` is a sensible default.
 
@@ -262,6 +263,8 @@ When an explicit card-style layout does require multiple top-level `<Section>` s
   <Paragraph>Details for the second group.</Paragraph>
 </Section>
 ```
+
+Apply the same spacing rule to other adjacent highlighted blocks. For example, do not place a `blockColor` paragraph directly against a `blockColor` columns group unless they are meant to read as one connected card.
 
 ---
 
