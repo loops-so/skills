@@ -15,7 +15,7 @@ description: >
   questions about the Loops HTTP API, SDK integration, or CLI unless email body
   content is also involved.
 metadata:
-  version: 1.1.9
+  version: 1.1.10
 ---
 
 # LMX Skill
@@ -72,10 +72,12 @@ Before returning any LMX output, verify:
 - [ ] Body/background colors are intentional: supplied by `themeId` or explicit `bodyColor`/`backgroundColor`
 - [ ] Generated copy follows the copy and punctuation guidance: no em dashes, decorative arrow glyphs, or ellipses unless requested or source-preserved
 - [ ] Generated `<H1>`, `<H2>`, and `<H3>` text does not end with a period; question marks or exclamation points are used only when intentional
+- [ ] Generated documents use a restrained heading set: usually one `<H1>`, only necessary `<H2>` breaks, and `<H3>` only for real nested hierarchy
 - [ ] CTA and `<Button>` text is concise, action-oriented, and does not end with a period
 - [ ] No same-color-on-same-color situations (check text vs block color, icon color vs background, etc.)
 - [ ] Sufficient Y-spacing on block elements
 - [ ] Important copy, headings, CTAs, and highlighted blocks use subtle visual emphasis where appropriate
+- [ ] `<Section>` is used sparingly for callouts, grouped controls, linked groups, or an explicit card-style layout; ordinary body copy is not wrapped into many floating cards by default
 - [ ] Adjacent `<Section>` siblings are separated with a line-break spacer unless the user explicitly specifies a different section-spacing approach
 - [ ] `<Columns>` has two to four `<ColumnItem>` children, with `widths` matching the column count when provided
 - [ ] Dynamic images use static `src` plus `dynamicSrc`, not variables in `src`
