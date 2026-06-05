@@ -72,6 +72,7 @@ Default approach:
 - `<Divider>`: typically fine without explicit padding, but add `paddingTop="16" paddingBottom="16"` if elements feel crowded.
 - `<Image />`: `paddingBottom="16"` unless immediately followed by a caption paragraph.
 - Adjacent top-level `<Section>` nodes: always add visible space between them. Unless the user explicitly specifies another spacing approach, separate section siblings with a line-break spacer. `<Br />` is inline-only and never top-level, so use a valid block wrapper such as `<Paragraph><Br /></Paragraph>`.
+- Adjacent highlighted siblings: if two consecutive top-level blocks both use `blockColor` (for example a callout `<Paragraph>` followed by a highlighted `<Columns>` card), add visible vertical space between them or consolidate them into one grouped block. A compact valid spacer is `<Paragraph fontSize="12" lineHeight="100"><Br /></Paragraph>`. Only let highlighted blocks touch when the intent is a single connected card.
 
 Use `bodyYPadding` on `<Style />` for global top/bottom padding inside the body. `"16"` to `"32"` is a sensible default.
 
@@ -110,6 +111,8 @@ Generated heading text in `<H1>`, `<H2>`, and `<H3>` should read like labels, no
 - Use question marks only for real questions.
 - Use exclamation points sparingly and only when the requested tone calls for them.
 - Preserve source heading punctuation only when the user asks for exact copy preservation.
+
+Default to a small heading set. Most generated emails need one `<H1>`, a few `<H2>` elements only for major content breaks, and no `<H3>` unless the structure truly has nested hierarchy. Do not add a heading above every short paragraph, list, checklist item, or card. If a phrase only needs emphasis inside body copy, prefer `<Strong>` in a `<Paragraph>` or `<ListItem>` instead of introducing another heading level.
 
 ```xml
 <!-- Good: headings read as labels -->
@@ -228,11 +231,16 @@ Key details:
 
 ---
 
-## Sections For Cards And Groups
+## Sections For Callouts And Cards
 
-Use `<Section>` when a design needs a card, group, or framed content area around multiple related blocks. Put the background, radius, padding, and optional link on the section instead of repeating the same styling on every child block.
+Use `<Section>` sparingly when a design needs a callout, card, grouped controls, linked group, or framed content area around multiple related blocks. Put the background, radius, padding, and optional link on the section instead of repeating the same styling on every child block.
+
+Do not wrap every heading/paragraph pair in a `<Section>` by default. Most email bodies should flow through ordinary top-level blocks (`<H1>`, `<H2>`, `<Paragraph>`, lists, images, buttons), with one or two `<Section>` callouts only where the emphasis is useful. Many floating cards in the email body make the layout feel busy unless that card-heavy style is explicitly requested or clearly present in the source design.
 
 ```xml
+<H1>Your report is ready</H1>
+<Paragraph paddingBottom="16">Here are the highlights from this week.</Paragraph>
+
 <Section blockColor="#f8fafc" blockBorderRadius="12" paddingTop="16" paddingRight="16" paddingBottom="16" paddingLeft="16">
   <H2>Account summary</H2>
   <Paragraph>Your latest report is ready.</Paragraph>
@@ -242,7 +250,7 @@ Use `<Section>` when a design needs a card, group, or framed content area around
 
 Do not nest `<Section>` inside another `<Section>`. If you need grouped content inside a card, use ordinary child blocks, lists, columns, or dividers within one section.
 
-Do not place two top-level `<Section>` siblings directly next to each other. Add a line-break spacer between them unless the user explicitly specifies a different spacing treatment:
+When an explicit card-style layout does require multiple top-level `<Section>` siblings, do not place them directly next to each other. Add a line-break spacer between them unless the user explicitly specifies a different spacing treatment:
 
 ```xml
 <Section blockColor="#f8fafc" blockBorderRadius="12" paddingTop="16" paddingRight="16" paddingBottom="16" paddingLeft="16">
@@ -255,6 +263,8 @@ Do not place two top-level `<Section>` siblings directly next to each other. Add
   <Paragraph>Details for the second group.</Paragraph>
 </Section>
 ```
+
+Apply the same spacing rule to other adjacent highlighted blocks. For example, do not place a `blockColor` paragraph directly against a `blockColor` columns group unless they are meant to read as one connected card.
 
 ---
 
@@ -272,9 +282,10 @@ When you set a custom `blockColor` on a `<CodeBlock>`, visually pair it with the
 
 - One `<H1>` per document (unless the content genuinely has multiple top-level sections).
 - Follow heading levels in order: `<H1>` -> `<H2>` -> `<H3>`. Don't skip levels for styling reasons; adjust `fontSize` instead.
+- Keep generated heading hierarchy compact by default: avoid creating a heading for every paragraph, list, or small card.
 - Use subtle emphasis to draw attention to the most important content. In inline-content blocks such as `<Paragraph>`, `<ListItem>`, `<Quote>`, `<H1>`, `<H2>`, and `<H3>`, wrap short key phrases with `<Strong>` rather than bolding whole paragraphs.
 - Buttons cannot contain inline formatting tags, so make CTA buttons feel visually strong through clear action copy, high-contrast `bgColor`/`textColor`, enough padding, centered alignment when appropriate, and a restrained `borderRadius`.
-- Make headers and important callouts stand out with hierarchy, spacing, color, or a light `blockColor` treatment. Keep emphasis selective so the whole email still feels calm and scannable.
+- Make headers and important callouts stand out with hierarchy, spacing, color, a light `blockColor` treatment, or a sparingly used `<Section>`. Keep emphasis selective so the whole email still feels calm and scannable.
 - CTAs (`<Button>`) should stand out: high contrast, enough padding, aligned centrally for most transactional emails.
 - Use `<Divider />` sparingly to separate distinct sections, not between every element.
 - Keep icon rows (`<Icons>`) near the footer, typically the last or second-to-last block.

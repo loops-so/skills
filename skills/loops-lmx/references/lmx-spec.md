@@ -466,6 +466,7 @@ If a user asks for fallback behavior in LMX output, mention that the LMX markup 
 | `<Icons color="#334155">` | Use `#000000`, `#808080`, or `#ffffff` |
 | Two `<Style />` tags | Use only one |
 | Adjacent top-level `<Section>` siblings with no spacer | Add a line-break spacer between sections unless the user explicitly specified a different spacing treatment |
+| Adjacent top-level `blockColor` blocks with no spacer | Add visible vertical space between highlighted blocks unless they are intentionally one connected card |
 | Unescaped `<` or `&` in text | Use `&lt;` and `&amp;` |
 | Manual legal footer, postal address, or unsubscribe block | Omit it; Loops adds required footer content automatically. A branded footer component can appear above it |
 
