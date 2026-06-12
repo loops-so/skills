@@ -16,6 +16,7 @@
 
 - https://loops.so/docs/api-reference/intro
 - https://loops.so/docs/api-reference/examples/campaigns
+- https://loops.so/docs/api-reference/examples/transactional-emails
 - https://loops.so/docs/sdks/javascript
 - https://loops.so/docs/sdks/nuxt
 - https://loops.so/docs/sdks/php
@@ -245,35 +246,6 @@ Returns `409` if the same key was used before.
 
 ### Transactional Emails
 
-#### List transactional emails
-
-```
-GET /v1/transactional?perPage=20&cursor=...
-```
-
-Paginated list of published transactional emails. `perPage` must be between 10 and 50. Default is 20. Use this to find `transactionalId` values.
-
-```json
-{
-  "pagination": {
-    "totalResults": 42,
-    "returnedResults": 20,
-    "perPage": 20,
-    "totalPages": 3,
-    "nextCursor": "abc...",
-    "nextPage": "https://..."
-  },
-  "data": [
-    {
-      "id": "cll42l54f20i1la0lfooe3z12",
-      "name": "Welcome email",
-      "lastUpdated": "...",
-      "dataVariables": ["firstName", "trialEnd"]
-    }
-  ]
-}
-```
-
 #### Send a transactional email
 
 ```
@@ -299,9 +271,124 @@ POST /v1/transactional
 }
 ```
 
+`email` and `transactionalId` are required. `addToAudience: true` creates a contact from `email` if one does not already exist.
+
 Attachments must be enabled on your account before use. Contact `help@loops.so` to enable them.
 
-Supports the `Idempotency-Key` header the same way as events.
+Supports the `Idempotency-Key` header (max 100 characters) the same way as events. Returns `400` if the transactional email is not published.
+
+#### List transactional emails
+
+```
+GET /v1/transactional-emails?perPage=20&cursor=...
+```
+
+Preferred endpoint. Returns a paginated list of transactional emails, most recently created first. `perPage` must be between 10 and 50. Default is 20. Use this to find `transactionalId` values and inspect draft/published state.
+
+```json
+{
+  "pagination": {
+    "totalResults": 42,
+    "returnedResults": 20,
+    "perPage": 20,
+    "totalPages": 3,
+    "nextCursor": "abc...",
+    "nextPage": "https://..."
+  },
+  "data": [
+    {
+      "id": "cll42l54f20i1la0lfooe3z12",
+      "name": "Welcome email",
+      "draftEmailMessageId": null,
+      "publishedEmailMessageId": "em_abc123",
+      "createdAt": "2025-02-02T02:56:28.845Z",
+      "updatedAt": "2025-02-02T03:10:00.000Z",
+      "dataVariables": ["firstName", "trialEnd"]
+    }
+  ]
+}
+```
+
+`dataVariables` lists variable names from the published email. It is empty for unpublished transactional emails.
+
+Legacy (deprecated):
+
+```
+GET /v1/transactional?perPage=20&cursor=...
+```
+
+Returns only published transactional emails with `id`, `name`, `lastUpdated`, and `dataVariables`. Prefer `GET /v1/transactional-emails`.
+
+#### Creating and managing transactional emails
+
+The API lets you create transactional email templates, edit their draft content, and publish them from code.
+
+A sending domain must be configured before creating transactional emails or editing drafts.
+
+For LMX markup rules, use the separate `loops-lmx` skill.
+
+##### Typical workflow
+
+1. `POST /v1/transactional-emails` with `{ "name": "..." }` — creates the transactional email and an empty draft email message. Save `id`, `draftEmailMessageId`, and `draftEmailMessageContentRevisionId`.
+2. `GET /v1/themes` and `GET /v1/components` — discover `themeId` and `componentId` values for LMX (optional).
+3. `POST /v1/email-messages/{draftEmailMessageId}` — set subject, sender fields, and `lmx`; pass `draftEmailMessageContentRevisionId` as `expectedRevisionId` on the first update.
+4. After each successful update, save the returned `contentRevisionId` and pass it as `expectedRevisionId` on the next update.
+5. `POST /v1/transactional-emails/{transactionalId}/publish` — publish the draft. The draft becomes the published version and the draft is cleared.
+6. `POST /v1/transactional` — send the published email using the returned `id` as `transactionalId`.
+
+To edit a published transactional email later, call `POST /v1/transactional-emails/{transactionalId}/draft` to ensure a draft exists (seeded from the published version when present), update the draft via `/v1/email-messages/{emailMessageId}`, then publish again.
+
+##### Create a transactional email
+
+```
+POST /v1/transactional-emails
+```
+
+```jsonc
+{
+  "name": "Welcome email"
+}
+```
+
+Returns `201` with `id`, `draftEmailMessageId`, `draftEmailMessageContentRevisionId`, `publishedEmailMessageId` (null until published), timestamps, and `dataVariables`.
+
+##### Get a transactional email
+
+```
+GET /v1/transactional-emails/{transactionalId}
+```
+
+Returns `id`, `name`, `draftEmailMessageId`, `publishedEmailMessageId`, timestamps, and `dataVariables`.
+
+##### Update a transactional email
+
+```
+POST /v1/transactional-emails/{transactionalId}
+```
+
+```jsonc
+{
+  "name": "Renamed welcome email"
+}
+```
+
+Updates the transactional email name only.
+
+##### Ensure a draft email message
+
+```
+POST /v1/transactional-emails/{transactionalId}/draft
+```
+
+If a draft already exists, returns it unchanged. Otherwise creates a new empty draft, seeded from the most recent published version when present. Returns `draftEmailMessageId` and `draftEmailMessageContentRevisionId` for editing via `/v1/email-messages/{emailMessageId}`.
+
+##### Publish a transactional email draft
+
+```
+POST /v1/transactional-emails/{transactionalId}/publish
+```
+
+Publishes the current draft. Returns `409` if there is no draft to publish. Returns `422` if the draft fails validation, the sending domain is not verified, or content was flagged as unsafe.
 
 ### Creating and editing campaigns
 
@@ -396,6 +483,8 @@ Updates draft email-message fields. All body fields are optional in the schema, 
 
 `fromEmail` is the sender username only, without `@` or a domain. The team's sending domain is appended automatically.
 
+LMX dynamic tags like `{data.}` and `{contact.}` can be inserted in all fields apart from `expectedRevisionId`.
+
 On success, the response includes a new `contentRevisionId` and may include non-fatal `warnings` from LMX compilation. LMX compile failures (invalid tags, missing required attributes such as `<Image src>`, `<Component componentId>`, `<Icon name>`, or `<Link href>`) return HTTP `422`. LMX payloads larger than **100 KB** return HTTP `413`.
 
 #### Themes
@@ -438,6 +527,12 @@ Returns `componentId`, `name`, and the component body as LMX.
 
 Use uploads to add image assets for LMX and email content.
 
+Supported `contentType` values: `image/jpeg`, `image/png`, `image/gif`, and `image/webp`.
+
+`contentLength` must be a positive integer no greater than **4,000,000 bytes** (4 MB). Returns `413` when the size limit is exceeded.
+
+Upload rate limit: **50 uploads per 24 hours** per team. Returns `429` with `maxUploads` and `windowHours` when exceeded. Contact support to raise the limit.
+
 ##### Create an upload
 
 ```
@@ -453,13 +548,17 @@ POST /v1/uploads
 
 Returns `emailAssetId` and a `presignedUrl`. Upload the file with HTTP `PUT` to the returned `presignedUrl`, using the same `Content-Type` and `Content-Length` values.
 
+Returns `400` for invalid request bodies or unsupported `contentType` (response may include `supportedContentTypes`).
+
 ##### Complete an upload
 
 ```
 POST /v1/uploads/{id}/complete
 ```
 
-Use the returned `emailAssetId` as `{id}` to finalize. Success returns `finalUrl`, which you can use in LMX image attributes.
+Use the returned `emailAssetId` as `{id}` to finalize after the `PUT` upload succeeds. Success returns `emailAssetId` and `finalUrl`, which you can use in LMX `<Image url="..." />` attributes.
+
+Returns `400` if the upload id is missing or the uploaded file has an unsupported content type. Returns `404` if the upload is not found.
 
 ---
 
@@ -574,6 +673,52 @@ const updated = await fetch(
 // Save updated.contentRevisionId for the next update.
 ```
 
+### Creating and publishing a transactional email
+
+```javascript
+const headers = {
+  Authorization: `Bearer ${process.env.LOOPS_API_KEY}`,
+  "Content-Type": "application/json",
+};
+
+const created = await fetch("https://app.loops.so/api/v1/transactional-emails", {
+  method: "POST",
+  headers,
+  body: JSON.stringify({ name: "Password reset" }),
+}).then((r) => r.json());
+
+await fetch(
+  `https://app.loops.so/api/v1/email-messages/${created.draftEmailMessageId}`,
+  {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      expectedRevisionId: created.draftEmailMessageContentRevisionId,
+      subject: "Reset your password",
+      fromName: "Loops",
+      fromEmail: "hello",
+      lmx: '<Style themeId="default" />\n<Paragraph><Text>Click {dataVariables.resetLink} to reset.</Text></Paragraph>',
+    }),
+  }
+);
+
+const published = await fetch(
+  `https://app.loops.so/api/v1/transactional-emails/${created.id}/publish`,
+  { method: "POST", headers }
+).then((r) => r.json());
+
+// Send using the transactional email id.
+await fetch("https://app.loops.so/api/v1/transactional", {
+  method: "POST",
+  headers,
+  body: JSON.stringify({
+    email: "user@example.com",
+    transactionalId: published.id,
+    dataVariables: { resetLink: "https://yourapp.com/reset?token=abc" },
+  }),
+});
+```
+
 ### Next.js App Router event send
 
 ```typescript
@@ -686,9 +831,9 @@ curl -X POST https://app.loops.so/api/v1/contacts/create \
 | --- | --- | --- |
 | 401 | Invalid API key | Check the key is correct and has not been revoked |
 | 400 | Bad request | Check required fields and value types |
-| 404 | Not found | Contact, transactional email, campaign, theme, component, or email message ID does not exist |
-| 409 | Conflict | Email or userId already exists, idempotency key was reused, campaign is not draft, email message uses MJML or content cannot be parsed, or `expectedRevisionId` is stale |
-| 413 | Payload too large | LMX body exceeds 100 KB |
+| 404 | Not found | Contact, transactional email, campaign, theme, component, email message, or upload ID does not exist |
+| 409 | Conflict | Email or userId already exists, idempotency key was reused, campaign is not draft, transactional email has no draft to publish, email message uses MJML or content cannot be parsed, or `expectedRevisionId` is stale |
+| 413 | Payload too large | LMX body exceeds 100 KB, or upload `contentLength` exceeds 4 MB |
 | 422 | LMX failed to compile | Fix invalid LMX, missing required LMX attributes, or XML escaping |
 | 429 | Rate limited | Back off and retry |
 | CORS error | Client-side request | Move the API call to your server |
@@ -701,7 +846,9 @@ Most v1 contact, event, and transactional request body string values are limited
 
 - **Upsert pattern**: Use `PUT /v1/contacts/update` when you are not sure if a contact exists.
 - **`addToAudience` on transactional**: Setting this to `true` when sending a transactional email will make sure the recipient is added to the audience for marketing emails.
-- **Finding your `transactionalId`**: Go to the Loops dashboard -> Transactional, or call `GET /v1/transactional`.
+- **Finding your `transactionalId`**: Go to the Loops dashboard -> Transactional, or call `GET /v1/transactional-emails`.
+- **Transactional email lifecycle**: Create with `POST /v1/transactional-emails`, edit the draft via `/v1/email-messages/{draftEmailMessageId}`, publish with `POST /v1/transactional-emails/{id}/publish`, then send with `POST /v1/transactional`.
+- **Upload limits**: Max file size is 4 MB. Max 50 uploads per 24 hours per team.
 - **`fromEmail` on email messages**: Pass only the sender username, such as `"updates"`, not `"updates@example.com"`.
 - **Content revision IDs**: After `POST /v1/campaigns`, use `emailMessageContentRevisionId` as the first `expectedRevisionId`. After each `POST /v1/email-messages/{id}`, save `contentRevisionId` for the next update.
 - **Themes and components before LMX**: List themes and components first so `<Style themeId="..." />` and `<Component componentId="..." />` reference real IDs.

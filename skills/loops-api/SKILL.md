@@ -13,7 +13,7 @@ description: >
   integrate Loops into their app, backend, webhook, or automation. Do not
   trigger for CLI or shell-only requests.
 metadata:
-  version: 1.3.1
+  version: 1.4.0
 ---
 
 # Loops API and SDK Skill
@@ -27,6 +27,7 @@ Use this skill when the user needs to:
 - integrate Loops into an app, backend, webhook, or automation
 - decide between official SDKs and raw HTTP
 - manage contacts, contact properties, mailing lists, events, or transactional email
+- send transactional emails or create, edit, and publish transactional email templates via API
 - manage contact suppression status/removal
 - create draft campaigns, update email-message content (subject, sender, LMX), and upload image assets
 - list themes and components to build LMX payloads
@@ -66,9 +67,9 @@ If the user is working from the terminal instead of writing application code, us
 
 ## Category Routing
 
-- Auth, base URL, rate limits, contacts, suppression, properties, lists, events, transactional payloads, uploads, SDK examples, and HTTP errors:
+- Auth, base URL, rate limits, contacts, suppression, properties, lists, events, uploads, SDK examples, and HTTP errors:
   Read `references/http-api.md`
-- Campaigns, email messages, themes, and components:
+- Campaigns, transactional emails, email messages, themes, and components:
   Read `references/http-api.md`. For LMX markup itself, also use the `loops-lmx` skill.
 
 ## Output Checklist
