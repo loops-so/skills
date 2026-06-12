@@ -128,7 +128,7 @@ Translate the design into email-safe LMX:
 - Use `Columns` for compact comparative groups, checklist rows, and stat groups.
 - Use ordinary spacing for the rest of the document.
 
-If a reference detail cannot be reproduced exactly in LMX, use the closest email-safe equivalent and keep the original hierarchy intact. Unsupported effects such as overlapping layers, arbitrary vector art, complex app chrome, or precise responsive art direction should not be recreated with fragile markup.
+If a reference detail cannot be reproduced exactly in LMX, use the closest email-safe equivalent and keep the original hierarchy intact.
 
 When a rendered preview is available, compare it against the reference before calling the document done. Check composition, body width, X/Y padding, heading scale, wrapping, card padding, button size and placement, divider spacing, and footer placement. If the words are right but the layout is materially different, revise the LMX.
 
