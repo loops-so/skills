@@ -483,6 +483,8 @@ Updates draft email-message fields. All body fields are optional in the schema, 
 
 `fromEmail` is the sender username only, without `@` or a domain. The team's sending domain is appended automatically.
 
+LMX dynamic tags like `{data.}` and `{contact.}` can be inserted in all fields apart from `expectedRevisionId`.
+
 On success, the response includes a new `contentRevisionId` and may include non-fatal `warnings` from LMX compilation. LMX compile failures (invalid tags, missing required attributes such as `<Image src>`, `<Component componentId>`, `<Icon name>`, or `<Link href>`) return HTTP `422`. LMX payloads larger than **100 KB** return HTTP `413`.
 
 #### Themes

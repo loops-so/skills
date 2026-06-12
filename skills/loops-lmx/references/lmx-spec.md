@@ -404,6 +404,8 @@ LMX variables use braced expressions with explicit namespaces.
 
 Use explicit namespaces in LMX. The prefix tells Loops which data source to resolve at send time.
 
+Variables can be used in LMX email bodies, and also in email sending settings (subject, preview, from name, from email, reply to), both in the Loops editor and when updating email messages with the API.
+
 ### Contact properties (`{contact.X}`)
 
 Use `{contact.apiName}` for campaign personalization, for example `{contact.firstName}`.
@@ -445,7 +447,6 @@ Transactional data-variable rules:
 - API values may be `string` or `number`.
 - Non-optional variables must be present in `dataVariables` or the send fails.
 - Optional variables may be omitted from the request or sent as an empty string `""` (`null` does not work).
-- Data variables are also available in transactional sending settings (subject, from, reply, CC, BCC) when configured in the editor; the same `{data.X}` names apply.
 
 Do not use editor or MJML transactional syntax in LMX:
 
