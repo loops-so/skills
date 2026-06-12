@@ -4,12 +4,14 @@ These guidelines apply to every LMX document unless the user explicitly override
 
 ---
 
-## Set Body And Background Color
+## Set Body, Background, And Padding
 
-Every document should have intentional body and background colors, either from a referenced theme or from explicit `<Style />` overrides.
+Every document should have intentional body and background colors, plus deliberate body padding, either from a referenced theme or from explicit `<Style />` overrides.
 
 - `bodyColor`: the email body/card background (the centered content area)
+- `bodyXPadding` and `bodyYPadding`: inner left/right and top/bottom padding inside the email body/card
 - `backgroundColor`: the page/canvas behind the body
+- `backgroundXPadding` and `backgroundYPadding`: outer canvas padding around the email body/card
 
 If `<Style />` has a `themeId` and that theme already defines suitable body and background colors, do not duplicate those attributes unless you are intentionally overriding the theme. If no theme is used, or the theme colors are unknown, set both `bodyColor` and `backgroundColor` explicitly.
 
@@ -17,12 +19,20 @@ Setting both colors, either via theme or overrides, gives the email a clear visu
 
 If `bodyColor` is not set, the email body does not get a separate card/background color, so the `backgroundColor` shows through behind the content. That can be useful for plain/full-width designs, but for card-like styled emails set both values intentionally.
 
+Set horizontal padding deliberately. Most production emails should not leave content pressed against the body edges. Use `bodyXPadding` for the default left/right breathing room instead of adding `paddingLeft` and `paddingRight` to every block.
+
+Default approach:
+- `bodyXPadding="24"` and `bodyYPadding="24"` for most polished emails
+- `bodyXPadding="32"` when the design is sparse, premium, or card-like
+- `bodyXPadding="16"` or `"20"` only for compact transactional emails or dense tables/checklists
+- `backgroundXPadding` and `backgroundYPadding` only when you need explicit canvas gutters around a separate body/card
+
 ```xml
-<!-- Good: standalone colors -->
-<Style bodyColor="#ffffff" backgroundColor="#f1f5f9" bodyYPadding="24" />
+<!-- Good: standalone colors and body padding -->
+<Style bodyColor="#ffffff" backgroundColor="#f1f5f9" bodyXPadding="24" bodyYPadding="24" />
 
 <!-- Good: theme provides colors; only override what needs changing -->
-<Style themeId="st_123" bodyYPadding="24" />
+<Style themeId="st_123" bodyXPadding="24" bodyYPadding="24" />
 
 <!-- Not this: missing backgroundColor without a theme known to provide it -->
 <Style bodyColor="#ffffff" />
@@ -31,10 +41,10 @@ If `bodyColor` is not set, the email body does not get a separate card/backgroun
 If the user asks for a dark email:
 
 ```xml
-<Style bodyColor="#0f172a" backgroundColor="#020617" bodyYPadding="24" />
+<Style bodyColor="#0f172a" backgroundColor="#020617" bodyXPadding="24" bodyYPadding="24" />
 ```
 
-Always infer sensible defaults for `bodyYPadding` (typically `"16"` to `"32"`) even when the user doesn't specify.
+Always infer sensible defaults for `bodyXPadding` and `bodyYPadding` (typically `"16"` to `"32"`) even when the user does not specify them.
 
 ---
 
@@ -61,11 +71,12 @@ Never place text, icons, or UI elements in the same color (or near-same color) a
 
 ---
 
-## Add Vertical Spacing Around Elements
+## Add Spacing Around Elements
 
-Use `paddingTop` and `paddingBottom` on block elements to add breathing room. Emails without spacing feel dense and hard to scan.
+Use `bodyXPadding` on `<Style />` for global left/right breathing room, and use `paddingTop` and `paddingBottom` on block elements for vertical rhythm. Emails without spacing feel dense and hard to scan.
 
 Default approach:
+- Global body padding: start with `bodyXPadding="24" bodyYPadding="24"` unless the theme already defines good padding.
 - Headings (`<H1>`, `<H2>`, `<H3>`): add `paddingTop="24"` or `paddingTop="32"` unless they are the first element.
 - `<Paragraph>` after a heading: `paddingBottom="8"` to `"16"` is typical.
 - `<Button>`: add `paddingTop="24"` and `paddingBottom="24"` to give CTAs room.
@@ -74,15 +85,52 @@ Default approach:
 - Adjacent top-level `<Section>` nodes: always add visible space between them. Unless the user explicitly specifies another spacing approach, separate section siblings with a line-break spacer. `<Br />` is inline-only and never top-level, so use a valid block wrapper such as `<Paragraph><Br /></Paragraph>`.
 - Adjacent highlighted siblings: if two consecutive top-level blocks both use `blockColor` (for example a callout `<Paragraph>` followed by a highlighted `<Columns>` card), add visible vertical space between them or consolidate them into one grouped block. A compact valid spacer is `<Paragraph fontSize="12" lineHeight="100"><Br /></Paragraph>`. Only let highlighted blocks touch when the intent is a single connected card.
 
-Use `bodyYPadding` on `<Style />` for global top/bottom padding inside the body. `"16"` to `"32"` is a sensible default.
+Use block-level `paddingLeft` and `paddingRight` for local insets only, such as a pill, callout, or nested panel. Do not use repeated per-block X padding as a substitute for `bodyXPadding`.
 
 ```xml
 <!-- Good: elements breathe -->
-<Style bodyColor="#ffffff" backgroundColor="#f1f5f9" bodyYPadding="24" />
+<Style bodyColor="#ffffff" backgroundColor="#f1f5f9" bodyXPadding="24" bodyYPadding="24" />
 <H1 paddingTop="8" paddingBottom="4">Welcome aboard</H1>
 <Paragraph paddingBottom="16">Here is what happens next.</Paragraph>
 <Button href="https://loops.so" bgColor="#0f172a" textColor="#ffffff" align="center" paddingTop="8" paddingBottom="24">Get started</Button>
 ```
+
+---
+
+## Email Width And Density
+
+Design for a narrow email preview, not a landing page. A good LMX email should feel readable around a 600px-wide body, with clear hierarchy and enough whitespace to scan quickly.
+
+Default heading scale for designed emails:
+- `heading1FontSize`: usually `26`
+- `heading2FontSize`: usually `20` to `24`
+- `heading3FontSize`: usually `15` to `17`
+
+Use larger heading sizes only when the surrounding design is sparse enough for them. Most email headers should stay at `heading1FontSize="26"` instead of using landing-page-scale type.
+
+Keep body copy readable:
+- Body text is usually `15` to `18` px with comfortable line height.
+- Avoid lines that feel too wide or too close to the body edge.
+- Prefer whitespace, grouping, alignment, typography, and hierarchy before adding decorative surfaces.
+- Use one clear accent color with neutral grays and near-black text. For Loops-branded examples, `#fc5200` can be the accent, but do not force it onto another brand.
+
+Avoid hero-scale type, decorative complexity, or many floating cards unless the source design explicitly calls for that treatment.
+
+---
+
+## Reference-Driven Layout Fidelity
+
+When converting a visual reference, screenshot, existing email, or detailed design notes into LMX, preserve the reference's structure instead of flattening it into generic centered text.
+
+Translate the design into email-safe LMX:
+- Use `Style` for global body colors, X/Y padding, typography, and button defaults.
+- Use `Section` for real grouped panels, cards, callouts, or linked groups.
+- Use `Columns` for compact comparative groups, checklist rows, and stat groups.
+- Use ordinary spacing for the rest of the document.
+
+If a reference detail cannot be reproduced exactly in LMX, use the closest email-safe equivalent and keep the original hierarchy intact.
+
+When a rendered preview is available, compare it against the reference before calling the document done. Check composition, body width, X/Y padding, heading scale, wrapping, card padding, button size and placement, divider spacing, and footer placement. If the words are right but the layout is materially different, revise the LMX.
 
 ---
 
