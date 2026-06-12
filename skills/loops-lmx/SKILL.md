@@ -15,7 +15,7 @@ description: >
   questions about the Loops HTTP API, SDK integration, or CLI unless email body
   content is also involved.
 metadata:
-  version: 1.1.10
+  version: 1.1.11
 ---
 
 # LMX Skill
@@ -69,10 +69,11 @@ Before returning any LMX output, verify:
 - [ ] `<Button>` text has no inline tags, but can contain variables; include `href` for clickable CTA buttons
 - [ ] `<CodeBlock>` treats braces literally
 - [ ] `<Style />` appears at most once as a top-level tag; put it first in generated output
-- [ ] Body/background colors are intentional: supplied by `themeId` or explicit `bodyColor`/`backgroundColor`
+- [ ] Body/background colors and X/Y padding are intentional: supplied by `themeId` or explicit `bodyColor`/`backgroundColor` plus `bodyXPadding`/`bodyYPadding` when needed
 - [ ] Generated copy follows the copy and punctuation guidance: no em dashes, decorative arrow glyphs, or ellipses unless requested or source-preserved
 - [ ] Generated `<H1>`, `<H2>`, and `<H3>` text does not end with a period; question marks or exclamation points are used only when intentional
 - [ ] Generated documents use a restrained heading set: usually one `<H1>`, only necessary `<H2>` breaks, and `<H3>` only for real nested hierarchy
+- [ ] Heading scale, body/card width, horizontal density, and layout structure are email-appropriate and follow the design guidance
 - [ ] CTA and `<Button>` text is concise, action-oriented, and does not end with a period
 - [ ] No same-color-on-same-color situations (check text vs block color, icon color vs background, etc.)
 - [ ] Sufficient Y-spacing on block elements
