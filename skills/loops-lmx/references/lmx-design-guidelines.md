@@ -102,11 +102,11 @@ Use block-level `paddingLeft` and `paddingRight` for local insets only, such as 
 Design for a narrow email preview, not a landing page. A good LMX email should feel readable around a 600px-wide body, with clear hierarchy and enough whitespace to scan quickly.
 
 Default heading scale for designed emails:
-- `heading1FontSize`: usually `30` to `36`
+- `heading1FontSize`: usually `26`
 - `heading2FontSize`: usually `20` to `24`
 - `heading3FontSize`: usually `15` to `17`
 
-Use larger heading sizes only when the surrounding design is sparse enough for them. For compact transactional emails, smaller values are often better, such as `heading1FontSize="26"` to `"30"`.
+Use larger heading sizes only when the surrounding design is sparse enough for them. Most email headers should stay at `heading1FontSize="26"` instead of using landing-page-scale type.
 
 Keep body copy readable:
 - Body text is usually `15` to `18` px with comfortable line height.
