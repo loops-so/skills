@@ -16,7 +16,7 @@ LMX (Loops Markup Language) is an XML-based email content format for the Loops e
 8. **Whitespace between block tags is ignored.** Indent and line-break freely.
 9. **Escape `<` and `&` in text** as `&lt;` and `&amp;`. Escape `"` and `&` in attribute values as `&quot;` and `&amp;`.
 10. **One `<Style />` tag maximum.** It is top-level metadata. Prefer putting it first; the exporter always emits it first.
-11. **LMX is separate from MJML upload syntax.** Do not use MJML tags or legacy dynamic tag prefixes inside LMX.
+11. **LMX is separate from MJML upload syntax.** Do not use MJML tags or legacy dynamic tag prefixes inside LMX (for example `{DATA_VARIABLE:...}` or unprefixed `{firstName}`).
 12. **API payload limit:** LMX sent through the email-message API must be at most 100 KB.
 
 ---
@@ -400,9 +400,13 @@ LMX variables use braced expressions with explicit namespaces.
 | Syntax | Kind | Common email types |
 | --- | --- | --- |
 | `{contact.firstName}` | Contact property / merge tag | Campaign email messages |
-| `{system.unsubscribe_link}` | System variable | Unsubscribe URL when deliberately linking to the system unsubscribe URL |
+| `{data.resetLink}` | Transactional data variable | Transactional email messages |
 
-Use explicit contact-property syntax such as `{contact.firstName}` in LMX.
+Use explicit namespaces in LMX. The prefix tells Loops which data source to resolve at send time.
+
+### Contact properties (`{contact.X}`)
+
+Use `{contact.apiName}` for campaign personalization, for example `{contact.firstName}`.
 
 Default contact properties currently include:
 
@@ -412,6 +416,43 @@ subscribed, createdAt
 ```
 
 Custom contact properties are referenced by API name, for example `{contact.companyName}`.
+
+### Transactional data variables (`{data.X}`)
+
+Use `{data.variableName}` in transactional email LMX. The name after `data.` must match a key in the `dataVariables` object on `POST /v1/transactional`.
+
+```xml
+<H1>Reset your password, {data.firstName}</H1>
+<Paragraph>Click the button below to choose a new password.</Paragraph>
+<Button href="{data.resetLink}" align="center">Reset password</Button>
+```
+
+```json
+{
+  "transactionalId": "cll42l54f20i1la0lfooe3z12",
+  "email": "user@example.com",
+  "dataVariables": {
+    "firstName": "Alex",
+    "resetLink": "https://app.example.com/reset/abc123"
+  }
+}
+```
+
+Transactional data-variable rules:
+
+- Names are case-sensitive (`{data.resetLink}` and `{data.ResetLink}` are different variables).
+- Names may contain only letters, numbers, underscores, and dashes.
+- API values may be `string` or `number`.
+- Non-optional variables must be present in `dataVariables` or the send fails.
+- Optional variables may be omitted from the request or sent as an empty string `""` (`null` does not work).
+- Data variables are also available in transactional sending settings (subject, from, reply, CC, BCC) when configured in the editor; the same `{data.X}` names apply.
+
+Do not use editor or MJML transactional syntax in LMX:
+
+- `{resetLink}` (unprefixed) is invalid in LMX; use `{data.resetLink}`.
+- `{DATA_VARIABLE:resetLink}` is valid in MJML and the Loops editor, but not in LMX.
+
+Use `{data.X}` for transactional emails and `{contact.X}` for campaigns. Do not mix campaign contact-property syntax into transactional LMX when the value comes from the send payload.
 
 Variables are valid in:
 
@@ -440,7 +481,7 @@ Fallbacks for contact properties are editor/email-message metadata outside the L
 <Paragraph>Hi {contact.firstName}</Paragraph>
 ```
 
-If a user asks for fallback behavior in LMX output, mention that the LMX markup can reference the variable, but fallback values must be configured through the Loops editor or metadata path that owns the email message fallbacks.
+If a user asks for fallback behavior in LMX output, mention that the LMX markup can reference the variable, but fallback values must be configured through the Loops editor or metadata path that owns the email message fallbacks. For transactional emails, mark a data variable as optional in the editor instead of inventing inline fallback syntax.
 
 ---
 
@@ -458,7 +499,9 @@ If a user asks for fallback behavior in LMX output, mention that the LMX markup 
 | Plain text at top level | Wrap in `<Paragraph>...</Paragraph>` |
 | `<Strong>` at top level | Wrap in a block such as `<Paragraph>` |
 | `<Button><Strong>Click</Strong></Button>` | Button text cannot contain inline tags |
-| `{firstName}` in LMX | Use `{contact.firstName}` |
+| `{firstName}` in LMX | Use `{contact.firstName}` for campaigns or `{data.firstName}` for transactional emails |
+| `{DATA_VARIABLE:resetLink}` in LMX | Use `{data.resetLink}`; `DATA_VARIABLE:` is MJML/editor syntax, not LMX |
+| `{resetLink}` in transactional LMX | Use `{data.resetLink}` |
 | `{contact.firstName|there}` or similar fallback syntax | No inline fallback syntax exists in LMX; configure fallbacks outside the LMX string |
 | `<Image src="{contact.imageUrl}" />` | Use static `src` plus `dynamicSrc="{contact.imageUrl}"` |
 | `<Columns>` with one or more than four `<ColumnItem>` children | Use two to four `<ColumnItem>` children |
@@ -472,7 +515,9 @@ If a user asks for fallback behavior in LMX output, mention that the LMX markup 
 
 ---
 
-## 9. Full Example Document
+## 9. Full Example Documents
+
+### Campaign example
 
 ```xml
 <Style themeId="st_123" bodyColor="#ffffff" backgroundColor="#f3f4f6" bodyYPadding="24" textBaseColor="#111827" />
@@ -503,4 +548,18 @@ If a user asks for fallback behavior in LMX output, mention that the LMX markup 
   <Icon name="twitter" href="https://x.com/loops" />
   <Icon name="linkedin" href="https://www.linkedin.com/company/loops" />
 </Icons>
+```
+
+### Transactional example
+
+```xml
+<Style themeId="st_123" bodyColor="#ffffff" backgroundColor="#f3f4f6" bodyYPadding="24" textBaseColor="#111827" />
+<H1>Reset your password</H1>
+<Paragraph fontSize="16" lineHeight="150">
+  Hi {data.firstName}, we received a request to reset your password.
+</Paragraph>
+<Button href="{data.resetLink}" align="center" bgColor="#000000" textColor="#ffffff" borderRadius="12">Reset password</Button>
+<Paragraph fontSize="14" lineHeight="150">
+  If you did not request this, you can ignore this email.
+</Paragraph>
 ```
