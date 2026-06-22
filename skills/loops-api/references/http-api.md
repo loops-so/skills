@@ -196,6 +196,26 @@ GET /v1/lists
 
 Returns `[{ id, name, description, isPublic }]`. Use the `id` values in `mailingLists` objects.
 
+### Audience Segments
+
+Audience segments are saved audience filters. Use them to target draft campaigns via `audienceSegmentId` on create or update. Segments are read-only via the API.
+
+#### List audience segments
+
+```
+GET /v1/audience-segments?perPage=20&cursor=...
+```
+
+`perPage` must be between 10 and 50 (default 20). Returns paginated `data` with `id`, `name`, `description`, `filter`, and timestamps, most recently created first.
+
+#### Get an audience segment
+
+```
+GET /v1/audience-segments/{audienceSegmentId}
+```
+
+Returns the segment metadata and its `filter` tree (same shape as `audienceFilter` on campaigns).
+
 ### Dedicated Sending IPs
 
 #### List dedicated sending IP addresses
@@ -301,6 +321,7 @@ Preferred endpoint. Returns a paginated list of transactional emails, most recen
       "name": "Welcome email",
       "draftEmailMessageId": null,
       "publishedEmailMessageId": "em_abc123",
+      "transactionalGroupId": "tg_abc123",
       "createdAt": "2025-02-02T02:56:28.845Z",
       "updatedAt": "2025-02-02T03:10:00.000Z",
       "dataVariables": ["firstName", "trialEnd"]
@@ -350,7 +371,7 @@ POST /v1/transactional-emails
 }
 ```
 
-Returns `201` with `id`, `draftEmailMessageId`, `draftEmailMessageContentRevisionId`, `publishedEmailMessageId` (null until published), timestamps, and `dataVariables`.
+Returns `201` with `id`, `draftEmailMessageId`, `draftEmailMessageContentRevisionId`, `publishedEmailMessageId` (null until published), `transactionalGroupId`, timestamps, and `dataVariables`.
 
 ##### Get a transactional email
 
@@ -358,7 +379,7 @@ Returns `201` with `id`, `draftEmailMessageId`, `draftEmailMessageContentRevisio
 GET /v1/transactional-emails/{transactionalId}
 ```
 
-Returns `id`, `name`, `draftEmailMessageId`, `publishedEmailMessageId`, timestamps, and `dataVariables`.
+Returns `id`, `name`, `draftEmailMessageId`, `publishedEmailMessageId`, `transactionalGroupId`, timestamps, and `dataVariables`.
 
 ##### Update a transactional email
 
@@ -368,11 +389,12 @@ POST /v1/transactional-emails/{transactionalId}
 
 ```jsonc
 {
-  "name": "Renamed welcome email"
+  "name": "Renamed welcome email",
+  "transactionalGroupId": "tg_abc123"
 }
 ```
 
-Updates the transactional email name only.
+Updates the transactional email name and/or group.
 
 ##### Ensure a draft email message
 
@@ -390,9 +412,40 @@ POST /v1/transactional-emails/{transactionalId}/publish
 
 Publishes the current draft. Returns `409` if there is no draft to publish. Returns `422` if the draft fails validation, the sending domain is not verified, or content was flagged as unsafe.
 
+##### Transactional groups
+
+Organize transactional emails into groups. The reserved name `"Unsorted"` cannot be used when creating or renaming groups, and the Unsorted group cannot be edited.
+
+```
+GET /v1/transactional-groups?perPage=20&cursor=...
+POST /v1/transactional-groups
+GET /v1/transactional-groups/{transactionalGroupId}
+POST /v1/transactional-groups/{transactionalGroupId}
+```
+
+Create body:
+
+```jsonc
+{
+  "name": "Onboarding",
+  "description": "Signup and welcome flows"
+}
+```
+
+Update body (at least one field required):
+
+```jsonc
+{
+  "name": "Renamed group",
+  "description": "Updated description"
+}
+```
+
+List and get responses return `id`, `name`, `description`, and timestamps.
+
 ### Creating and editing campaigns
 
-The API lets you create draft campaigns and set email-message content (subject, sender, preview text, LMX) from code.
+The API lets you create draft campaigns and set email-message content (subject, sender, preview text, LMX) from code. You can also set the campaign group, audience (mailing list, segment, or inline filter), and scheduling on create or while the campaign is still a draft.
 
 A sending domain must be configured before creating campaigns or reading email messages. Campaign and email-message writes only work while the campaign is in **Draft** status.
 
@@ -400,10 +453,95 @@ For LMX markup rules and design guidance, use the separate `loops-lmx` skill. Co
 
 #### Typical workflow
 
-1. `POST /v1/campaigns` with `{ "name": "..." }` — saves `emailMessageId` and `emailMessageContentRevisionId`.
-2. `GET /v1/themes` and `GET /v1/components` — discover `themeId` and `componentId` values for LMX.
-3. `POST /v1/email-messages/{emailMessageId}` — set subject, sender fields, and `lmx`; pass `emailMessageContentRevisionId` as `expectedRevisionId` on the first update.
-4. After each successful update, save the returned `contentRevisionId` and pass it as `expectedRevisionId` on the next update to avoid `409 Conflict` from stale revisions.
+1. Optionally `GET /v1/campaign-groups`, `GET /v1/audience-segments`, and `GET /v1/lists` to discover group, segment, and mailing-list IDs.
+2. `POST /v1/campaigns` with `{ "name": "..." }` and optional `campaignGroupId`, `mailingListId`, `audienceSegmentId`, `audienceFilter`, or `scheduling` — saves `id`, `emailMessageId`, and `emailMessageContentRevisionId`.
+3. `GET /v1/themes` and `GET /v1/components` — discover `themeId` and `componentId` values for LMX.
+4. `POST /v1/email-messages/{emailMessageId}` — set subject, sender fields, and `lmx`; pass `emailMessageContentRevisionId` as `expectedRevisionId` on the first update.
+5. After each successful update, save the returned `contentRevisionId` and pass it as `expectedRevisionId` on the next update to avoid `409 Conflict` from stale revisions.
+6. Optionally `POST /v1/email-messages/{emailMessageId}/preview` to send a test preview before scheduling or sending from the dashboard.
+
+#### Audience targeting
+
+A draft campaign can be sent to different audience types:
+
+- **`mailingListId`** — send to a mailing list (`GET /v1/lists` for IDs).
+- **`audienceSegmentId`** — send to a saved segment (`GET /v1/audience-segments`).
+- **`audienceFilter`** — inline filter conditions (same tree shape as segment `filter`).
+
+All three options can be used together. If a mailing list is applied, the segment/filter will be applied within that mailing list. If a filter is used with a segment, the filter edits the segment's saved filter. 
+
+`audienceFilter` is a tree of conditions combined with `match: "all"` or `match: "any"`:
+
+```jsonc
+{
+  "match": "all",
+  "conditions": [
+    {
+      "type": "property",
+      "key": "planTier",
+      "operator": "equals",
+      "value": "pro"
+    },
+    {
+      "type": "optIn",
+      "status": "accepted"
+    },
+    {
+      "type": "activity",
+      "action": "opened",
+      "negate": false,
+      "target": "campaign",
+      "id": "cmp_previous123"
+    }
+  ]
+}
+```
+
+Property `operator` values include `any`, `contains`, `notContains`, `equals`, `notEquals`, `greaterThan`, `lessThan`, `isTrue`, `isFalse`, `empty`, `notEmpty`, `dateEmpty`, `dateNotEmpty`, `after`, `before`, and `between` (use `{ "from": "...", "to": "..." }` for `between`). Omit `value` for value-less operators like `isTrue` or `empty`.
+
+#### Scheduling
+
+```jsonc
+{
+  "scheduling": {
+    "method": "schedule",
+    "timestamp": "2026-06-22T14:00:00.000Z"
+  }
+}
+```
+
+`method` is `"now"` or `"schedule"`. When `method` is `"schedule"`, `timestamp` is required and must be in the future. Omit `timestamp` when `method` is `"now"`.
+
+#### Campaign groups
+
+Organize campaigns into groups. The reserved name `"Unsorted"` cannot be used when creating or renaming groups, and the Unsorted group cannot be edited.
+
+```
+GET /v1/campaign-groups?perPage=20&cursor=...
+POST /v1/campaign-groups
+GET /v1/campaign-groups/{campaignGroupId}
+POST /v1/campaign-groups/{campaignGroupId}
+```
+
+Create body:
+
+```jsonc
+{
+  "name": "Product updates",
+  "description": "Feature announcements"
+}
+```
+
+Update body (at least one field required):
+
+```jsonc
+{
+  "name": "Renamed group",
+  "description": "Updated description"
+}
+```
+
+List and get responses return `id`, `name`, `description`, and timestamps.
 
 #### Campaigns
 
@@ -413,7 +551,7 @@ For LMX markup rules and design guidance, use the separate `loops-lmx` skill. Co
 GET /v1/campaigns?perPage=20&cursor=...
 ```
 
-`perPage` must be between 10 and 50 (default 20). Returns paginated `data` with `campaignId`, `emailMessageId`, `name`, `subject`, `status`, and timestamps. Status values include `Draft`, `Scheduled`, `Sending`, and `Sent`.
+`perPage` must be between 10 and 50 (default 20). Returns paginated `data` with `id`, `emailMessageId`, `name`, `status`, `campaignGroupId`, `mailingListId`, `audienceSegmentId`, `audienceFilter`, `scheduling`, and timestamps. Status values include `Draft`, `Scheduled`, `Sending`, and `Sent`.
 
 ##### Create a campaign
 
@@ -425,11 +563,20 @@ Only `name` is required. Creates a draft campaign and an empty email message in 
 
 ```jsonc
 {
-  "name": "Spring product announcement"
+  "name": "Spring product announcement",
+  "campaignGroupId": "cg_abc123",
+  "mailingListId": "cm_abc123",
+  "audienceSegmentId": null,
+  "audienceFilter": null,
+  "scheduling": {
+    "method": "now"
+  }
 }
 ```
 
-Returns `201` with `campaignId`, `emailMessageId`, and `emailMessageContentRevisionId`. Save both IDs and the revision ID for the first email-message update.
+Returns `201` with `id`, `emailMessageId`, `emailMessageContentRevisionId`, `campaignGroupId`, audience fields, `scheduling`, and timestamps. Save the campaign `id`, `emailMessageId`, and `emailMessageContentRevisionId` for subsequent updates.
+
+Returns `404` if a referenced mailing list or audience segment is not found. Returns `400` if the campaign group is not found or no sending domain is configured.
 
 ##### Get a campaign
 
@@ -437,19 +584,30 @@ Returns `201` with `campaignId`, `emailMessageId`, and `emailMessageContentRevis
 GET /v1/campaigns/{campaignId}
 ```
 
+Returns `id`, `name`, `status`, `emailMessageId`, `campaignGroupId`, `mailingListId`, `audienceSegmentId`, `audienceFilter`, `scheduling`, and timestamps.
+
 ##### Update a campaign
 
 ```
 POST /v1/campaigns/{campaignId}
 ```
 
-Updates the draft campaign name only. Returns `409` if the campaign is not in draft status.
+Updates a draft campaign. At least one field is required. Returns `409` if the campaign is not in draft status. Returns `404` if the campaign, mailing list, or audience segment is not found.
 
 ```jsonc
 {
-  "name": "Renamed announcement"
+  "name": "Renamed announcement",
+  "campaignGroupId": "cg_abc123",
+  "mailingListId": "cm_abc123",
+  "audienceSegmentId": "as_segment123",
+  "scheduling": {
+    "method": "schedule",
+    "timestamp": "2026-06-22T14:00:00.000Z"
+  }
 }
 ```
+
+Setting `audienceSegmentId` without `audienceFilter` clears any `audienceFilter`. You can also send an inline `audienceFilter` instead of a segment.
 
 #### Email messages
 
@@ -459,7 +617,7 @@ Updates the draft campaign name only. Returns `409` if the campaign is not in dr
 GET /v1/email-messages/{emailMessageId}
 ```
 
-Returns subject, preview text, sender fields, `lmx`, `contentRevisionId`, and `campaignId`. Returns `409` if the message uses legacy MJML format or content cannot be parsed.
+Returns subject, preview text, sender fields, `ccEmail`, `bccEmail`, `languageCode`, `emailFormat` (`styled` or `plain`), `lmx`, `contentRevisionId`, `contactPropertiesFallbacks`, `eventPropertiesFallbacks`, `dataVariablesFallbacks`, and either `campaignId` or `transactionalId` (mutually exclusive). Returns `409` if the message uses legacy MJML format or content cannot be parsed.
 
 ##### Update an email message
 
@@ -477,15 +635,57 @@ Updates draft email-message fields. All body fields are optional in the schema, 
   "fromName": "Loops",
   "fromEmail": "hello",
   "replyToEmail": "support@example.com",
-  "lmx": "<Style themeId=\"default\" />\n<Paragraph><Text>Hey there.</Text></Paragraph>\n<Component componentId=\"logo\" />"
+  "ccEmail": "team@example.com",
+  "bccEmail": "archive@example.com",
+  "languageCode": "en",
+  "emailFormat": "styled",
+  "lmx": "<Style themeId=\"default\" />\n<Paragraph><Text>Hey there.</Text></Paragraph>\n<Component componentId=\"logo\" />",
+  "contactPropertiesFallbacks": {
+    "firstName": "there"
+  },
+  "eventPropertiesFallbacks": {
+    "planName": "Pro"
+  },
+  "dataVariablesFallbacks": {
+    "resetLink": "https://example.com/reset"
+  }
 }
 ```
 
 `fromEmail` is the sender username only, without `@` or a domain. The team's sending domain is appended automatically.
 
+`ccEmail` and `bccEmail` require CC/BCC to be enabled for the team. `languageCode` requires translation to be enabled.
+
+Fallback maps (`contactPropertiesFallbacks`, `eventPropertiesFallbacks`, `dataVariablesFallbacks`) are full replacements of the existing map. Send `null` as a value to delete an existing fallback key.
+
 LMX dynamic tags like `{data.}` and `{contact.}` can be inserted in all fields apart from `expectedRevisionId`.
 
 On success, the response includes a new `contentRevisionId` and may include non-fatal `warnings` from LMX compilation. LMX compile failures (invalid tags, missing required attributes such as `<Image src>`, `<Component componentId>`, `<Icon name>`, or `<Link href>`) return HTTP `422`. LMX payloads larger than **100 KB** return HTTP `413`.
+
+##### Send a preview of an email message
+
+```
+POST /v1/email-messages/{emailMessageId}/preview
+```
+
+Send a test preview to one or more addresses. The accepted variable fields depend on the parent type:
+
+- **Campaign** previews: `contactProperties`
+- **Workflow** previews: `contactProperties` and `eventProperties`
+- **Transactional** previews: `dataVariables`
+
+Supplying a field the parent cannot reference returns `400`. Returns `429` when the daily preview limit (100 per team per rolling 24 hour window) is reached.
+
+```jsonc
+{
+  "emails": ["you@example.com"],
+  "contactProperties": {
+    "firstName": "Alex"
+  }
+}
+```
+
+Returns `{ "id": "email_message_id" }` on success.
 
 #### Themes
 
@@ -831,11 +1031,11 @@ curl -X POST https://app.loops.so/api/v1/contacts/create \
 | --- | --- | --- |
 | 401 | Invalid API key | Check the key is correct and has not been revoked |
 | 400 | Bad request | Check required fields and value types |
-| 404 | Not found | Contact, transactional email, campaign, theme, component, email message, or upload ID does not exist |
-| 409 | Conflict | Email or userId already exists, idempotency key was reused, campaign is not draft, transactional email has no draft to publish, email message uses MJML or content cannot be parsed, or `expectedRevisionId` is stale |
+| 404 | Not found | Contact, transactional email, campaign, campaign group, transactional group, audience segment, theme, component, email message, or upload ID does not exist |
+| 409 | Conflict | Email or userId already exists, idempotency key was reused, campaign is not draft, transactional email has no draft to publish, email message uses MJML or content cannot be parsed, `expectedRevisionId` is stale, or a reserved group name was used |
 | 413 | Payload too large | LMX body exceeds 100 KB, or upload `contentLength` exceeds 4 MB |
 | 422 | LMX failed to compile | Fix invalid LMX, missing required LMX attributes, or XML escaping |
-| 429 | Rate limited | Back off and retry |
+| 429 | Rate limited, or daily preview limit is reached | Back off and retry |
 | CORS error | Client-side request | Move the API call to your server |
 
 Most v1 contact, event, and transactional request body string values are limited to **500 characters**. LMX content on email-message updates follows the LMX payload limit.
@@ -853,6 +1053,11 @@ Most v1 contact, event, and transactional request body string values are limited
 - **Content revision IDs**: After `POST /v1/campaigns`, use `emailMessageContentRevisionId` as the first `expectedRevisionId`. After each `POST /v1/email-messages/{id}`, save `contentRevisionId` for the next update.
 - **Themes and components before LMX**: List themes and components first so `<Style themeId="..." />` and `<Component componentId="..." />` reference real IDs.
 - **Draft-only writes**: Campaign and email-message updates return `409` once a campaign leaves draft status.
+- **Campaign audience**: Target a `mailingListId`, `audienceSegmentId`, or inline `audienceFilter`. Setting `audienceSegmentId` clears `audienceFilter`.
+- **Campaign scheduling**: Use `scheduling.method` of `"now"` or `"schedule"`. `timestamp` is required and must be in the future when scheduling.
+- **Groups**: Campaign and transactional groups cannot be named `"Unsorted"`, and the Unsorted group cannot be edited. Omit `campaignGroupId` or `transactionalGroupId` on create to use the team's default group.
+- **Email message previews**: Use `POST /v1/email-messages/{emailMessageId}/preview`. Variable fields depend on whether the parent is a campaign, workflow, or transactional email.
+- **Email message fallbacks**: `contactPropertiesFallbacks`, `eventPropertiesFallbacks`, and `dataVariablesFallbacks` fully replace the existing map on each update.
 - **Mailing list membership**: Pass `{ "list_id": true }` to subscribe and `{ "list_id": false }` to unsubscribe.
 - **Event name matching**: The `eventName` must match the configured Loops trigger exactly.
 - **Idempotency keys**: Use these any time an operation could be retried, such as webhook handlers or confirmation flows.

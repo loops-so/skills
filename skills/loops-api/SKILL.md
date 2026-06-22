@@ -5,8 +5,9 @@ description: >
   code, backend services, webhook handlers, or server-side automation. This
   includes the Loops HTTP API and official SDKs for server-side contact,
   contact-property, mailing-list, event, API-key-validation,
-  transactional-email, content editing workflows (campaigns, email messages,
-  themes, and components). Trigger on phrases like "Loops API",
+  transactional-email, content editing workflows (campaigns, campaign groups,
+  transactional groups, audience segments, email messages, themes, and
+  components). Trigger on phrases like "Loops API",
   "Loops SDK", "create a campaign via API", "update email message LMX",
   "send a Loops event from my app", "add a contact to Loops in a webhook",
   "send a transactional email from backend code", or any time the user wants to
@@ -29,7 +30,10 @@ Use this skill when the user needs to:
 - manage contacts, contact properties, mailing lists, events, or transactional email
 - send transactional emails or create, edit, and publish transactional email templates via API
 - manage contact suppression status/removal
-- create draft campaigns, update email-message content (subject, sender, LMX), and upload image assets
+- create draft campaigns with audience targeting (mailing list, segment, or filter), groups, and scheduling
+- organize campaigns and transactional emails into groups
+- list audience segments for campaign targeting
+- update email-message content (subject, sender, CC/BCC, format, fallbacks, LMX) and send previews
 - list themes and components to build LMX payloads
 - validate credentials or troubleshoot Loops request behavior from code
 
@@ -69,7 +73,7 @@ If the user is working from the terminal instead of writing application code, us
 
 - Auth, base URL, rate limits, contacts, suppression, properties, lists, events, uploads, SDK examples, and HTTP errors:
   Read `references/http-api.md`
-- Campaigns, transactional emails, email messages, themes, and components:
+- Campaigns, campaign groups, transactional groups, audience segments, transactional emails, email messages, themes, and components:
   Read `references/http-api.md`. For LMX markup itself, also use the `loops-lmx` skill.
 
 ## Output Checklist
