@@ -15,7 +15,7 @@ description: >
   questions about the Loops HTTP API, SDK integration, or CLI unless email body
   content is also involved.
 metadata:
-  version: 1.1.11
+  version: 1.1.12
 ---
 
 # LMX Skill
@@ -65,6 +65,7 @@ Before returning any LMX output, verify:
 - [ ] Required attrs are present: `src` on `<Image />`, `componentId` on `<Component>`, `name` on `<Icon />`, and `href` on `<Link>`
 - [ ] No text or inline tags at the top level
 - [ ] Variables use explicit LMX namespaces and only appear where supported: inline content, button text, `<Button href>`, `<Link href>`, `<Image alt/href/dynamicSrc>`, and `<Section href>`
+- [ ] Campaign content uses `{contact.apiName}`; transactional content uses `{data.variableName}` (not unprefixed `{variableName}` or `{DATA_VARIABLE:...}`)
 - [ ] No inline fallback syntax is invented; fallbacks live outside the LMX string
 - [ ] `<Button>` text has no inline tags, but can contain variables; include `href` for clickable CTA buttons
 - [ ] `<CodeBlock>` treats braces literally
