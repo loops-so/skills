@@ -216,6 +216,115 @@ GET /v1/audience-segments/{audienceSegmentId}
 
 Returns the segment metadata and its `filter` tree (same shape as `audienceFilter` on campaigns).
 
+### Workflows
+
+Workflows are Loops automations (triggered emails, timers, branches, experiments, and more). The workflow API is read-only: list workflows, fetch a simplified graph, or load full detail for a single node. The workflow API must be enabled for your team; otherwise these endpoints return `401`.
+
+#### List workflows
+
+```
+GET /v1/workflows?perPage=20&cursor=...
+```
+
+`perPage` must be between 10 and 50 (default 20). Returns paginated `data` with `id`, `name`, `createdAt`, and `updatedAt`, most recently created first.
+
+```json
+{
+  "pagination": {
+    "totalResults": 12,
+    "returnedResults": 12,
+    "perPage": 20,
+    "totalPages": 1,
+    "nextCursor": null,
+    "nextPage": null
+  },
+  "data": [
+    {
+      "id": "wf_abc123",
+      "name": "Onboarding drip",
+      "createdAt": "2025-02-02T02:56:28.845Z",
+      "updatedAt": "2025-02-10T14:30:00.000Z"
+    }
+  ]
+}
+```
+
+Returns `400` for invalid `perPage` or `cursor` values.
+
+#### Get a workflow
+
+```
+GET /v1/workflows/{workflowId}
+```
+
+Returns a simplified workflow graph with `id`, `name`, `description`, `emoji`, `mailingListId`, `rootNodeId`, and a `nodes` map keyed by node ID.
+
+Each node includes `typeName` and `nextNodeIds`. Supported `typeName` values:
+
+- **Triggers**: `SignupTrigger`, `EventTrigger` (`eventName`, `reEligible`), `ContactPropertyTrigger` (`contactPropertyQuery`, `reEligible`), `AddToListTrigger` (`mailingList`, `reEligible`), `BlankTrigger`
+- **Actions and logic**: `AudienceFilter`, `TimerAction` (`amount`, `unit`), `SendEmailAction` (`emailMessageId`, `subject`), `ExitAction`, `BranchNode`, `ExperimentBranchNode` (`samplingRate`, `url`, `experimentId`, `experimentType`), `VariantNode` (`variantId`, `isControl`)
+
+`TimerAction` `unit` values are `m` (minutes), `h` (hours), `d` (days), and `s` (seconds). `ExperimentBranchNode` `experimentType` is `webhook` or `autosplit`.
+
+```jsonc
+{
+  "id": "wf_abc123",
+  "name": "Onboarding drip",
+  "description": "Welcome new signups",
+  "emoji": "👋",
+  "mailingListId": "cm_abc123",
+  "rootNodeId": "node_trigger",
+  "nodes": {
+    "node_trigger": {
+      "typeName": "EventTrigger",
+      "nextNodeIds": ["node_timer"],
+      "eventName": "signup",
+      "reEligible": false
+    },
+    "node_timer": {
+      "typeName": "TimerAction",
+      "nextNodeIds": ["node_email"],
+      "amount": 1,
+      "unit": "d"
+    },
+    "node_email": {
+      "typeName": "SendEmailAction",
+      "nextNodeIds": ["node_exit"],
+      "emailMessageId": "em_abc123",
+      "subject": "Welcome aboard"
+    },
+    "node_exit": {
+      "typeName": "ExitAction",
+      "nextNodeIds": []
+    }
+  }
+}
+```
+
+Returns `400` for an invalid `workflowId`. Returns `404` if the workflow is not found.
+
+#### Get workflow node details
+
+```
+GET /v1/workflows/{workflowId}/nodes/{nodeId}
+```
+
+Returns full detail for a single node. All node types include `id`, `workflowId`, `typeName`, and `nextNodeIds`. Type-specific fields match the simplified graph, with additional detail where applicable:
+
+- **`EventTrigger`**: `eventName`, `eventProperties` (array of `{ name, type }` where `type` is `string`, `number`, `boolean`, or `date`), `reEligible`
+- **`ContactPropertyTrigger`**: `contactPropertyQuery`, `reEligible`
+- **`AddToListTrigger`**: `reEligible`
+- **`AudienceFilter`**: `audienceFilter`, `audienceSegmentId`
+- **`TimerAction`**: `amount`, `unit`
+- **`SendEmailAction`**: `subject`
+- **`BranchNode`**: `evalStrategy`
+- **`ExperimentBranchNode`**: `samplingRate`, `url`, `experimentId`, `experimentType`
+- **`VariantNode`**: `variantId`, `isControl`
+
+`contactPropertyQuery` compares a contact property with `key`, `is`, and `was` comparisons. Each comparison has `operator` and `value`. Operators include `any`, `contains`, `not_contains`, `empty`, `not_empty`, `equal`, `not_equal`, `greater_than`, `less_than`, `true`, `false`, `numeric_equal`, `numeric_not_equal`, `date_empty`, `date_not_empty`, `after`, `before`, `between`, `campaign`, `any_loop_email`, `specific_loop_email`, `accepted_opt_in`, `rejected_opt_in`, `pending_opt_in`, and `not_opt_in`.
+
+Returns `400` for invalid `workflowId` or `nodeId`. Returns `404` if the workflow or node is not found.
+
 ### Dedicated Sending IPs
 
 #### List dedicated sending IP addresses
@@ -492,12 +601,21 @@ All three options can be used together. If a mailing list is applied, the segmen
       "negate": false,
       "target": "campaign",
       "id": "cmp_previous123"
+    },
+    {
+      "type": "activity",
+      "action": "clicked",
+      "negate": false,
+      "target": "workflowEmail",
+      "id": "em_workflow123"
     }
   ]
 }
 ```
 
 Property `operator` values include `any`, `contains`, `notContains`, `equals`, `notEquals`, `greaterThan`, `lessThan`, `isTrue`, `isFalse`, `empty`, `notEmpty`, `dateEmpty`, `dateNotEmpty`, `after`, `before`, and `between` (use `{ "from": "...", "to": "..." }` for `between`). Omit `value` for value-less operators like `isTrue` or `empty`.
+
+Activity conditions use `action` (`sent`, `opened`, or `clicked`), `negate`, `target` (`campaign`, `workflow`, or `workflowEmail`), and `id` (the campaign, workflow, or workflow email ID).
 
 #### Scheduling
 
@@ -1029,9 +1147,9 @@ curl -X POST https://app.loops.so/api/v1/contacts/create \
 
 | Status | Meaning | Fix |
 | --- | --- | --- |
-| 401 | Invalid API key | Check the key is correct and has not been revoked |
+| 401 | Invalid API key, or workflow/content API not enabled | Check the key is correct and has not been revoked; confirm the workflow or content API is enabled for your team |
 | 400 | Bad request | Check required fields and value types |
-| 404 | Not found | Contact, transactional email, campaign, campaign group, transactional group, audience segment, theme, component, email message, or upload ID does not exist |
+| 404 | Not found | Contact, transactional email, campaign, campaign group, transactional group, audience segment, workflow, workflow node, theme, component, email message, or upload ID does not exist |
 | 409 | Conflict | Email or userId already exists, idempotency key was reused, campaign is not draft, transactional email has no draft to publish, email message uses MJML or content cannot be parsed, `expectedRevisionId` is stale, or a reserved group name was used |
 | 413 | Payload too large | LMX body exceeds 100 KB, or upload `contentLength` exceeds 4 MB |
 | 422 | LMX failed to compile | Fix invalid LMX, missing required LMX attributes, or XML escaping |
@@ -1056,6 +1174,7 @@ Most v1 contact, event, and transactional request body string values are limited
 - **Campaign audience**: Target a `mailingListId`, `audienceSegmentId`, or inline `audienceFilter`. Setting `audienceSegmentId` clears `audienceFilter`.
 - **Campaign scheduling**: Use `scheduling.method` of `"now"` or `"schedule"`. `timestamp` is required and must be in the future when scheduling.
 - **Groups**: Campaign and transactional groups cannot be named `"Unsorted"`, and the Unsorted group cannot be edited. Omit `campaignGroupId` or `transactionalGroupId` on create to use the team's default group.
+- **Workflow inspection**: Use `GET /v1/workflows` to list workflows, `GET /v1/workflows/{workflowId}` for the simplified graph, and `GET /v1/workflows/{workflowId}/nodes/{nodeId}` for full node detail. The workflow API is read-only and must be enabled for your team.
 - **Email message previews**: Use `POST /v1/email-messages/{emailMessageId}/preview`. Variable fields depend on whether the parent is a campaign, workflow, or transactional email.
 - **Email message fallbacks**: `contactPropertiesFallbacks`, `eventPropertiesFallbacks`, and `dataVariablesFallbacks` fully replace the existing map on each update.
 - **Mailing list membership**: Pass `{ "list_id": true }` to subscribe and `{ "list_id": false }` to unsubscribe.
