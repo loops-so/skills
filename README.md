@@ -48,7 +48,7 @@ npx skills remove api cli email-sending-best-practices lmx --global
 
 ## Plugin
 
-Thie repo can also be installed as a Plugin in certain agent environments.
+This repo can also be installed as a Plugin in certain agent environments.
 
 ### Claude Code
 
@@ -112,6 +112,7 @@ After installation, try a task that should trigger one of the skills:
 - "Add a contact to Loops from my Next.js backend."
 - "Install the Loops CLI and authenticate against the right team."
 - "Send a transactional email with the Loops CLI."
+- "Design a new onboarding email with an imagegen reference, then write it in LMX."
 - "Write an LMX onboarding email template."
 - "Audit this onboarding email flow for deliverability issues."
 
@@ -194,12 +195,14 @@ Skill file: [skills/loops-email-sending-best-practices/SKILL.md](./skills/loops-
 Use this skill when you need to:
 
 - create or edit Loops email content in LMX
+- design net-new Loops emails from an imagegen/gpt-image or user-provided visual reference
 - review LMX markup for valid tags, nesting, attributes, and variables
 - use contact properties, components, sections, dynamic links, or dynamic images in Loops email content
 - apply Loops email design guidance while producing valid LMX
 
 Example prompts:
 
+- "Design a new onboarding email with an imagegen reference, then write it in LMX."
 - "Write a product update campaign in LMX."
 - "Convert this lifecycle email copy into Loops LMX."
 - "Review this LMX for compatibility."

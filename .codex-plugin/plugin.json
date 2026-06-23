@@ -33,7 +33,7 @@
     "defaultPrompt": [
       "Add a contact to Loops from my backend.",
       "Send a transactional email with the Loops API.",
-      "Write a welcome email in LMX for Loops."
+      "Design a new welcome email with an imagegen reference, then write it in LMX."
     ]
   }
 }

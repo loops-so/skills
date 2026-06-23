@@ -7,15 +7,19 @@ description: >
   the format used for Loops email content. Trigger on phrases like "create a
   campaign", "generate an email", "write a welcome email", "draft a lifecycle
   email", "build an email template", "create an onboarding email", "copy this
-  into LMX", "migrate this email", "convert this email to LMX", "LMX", "Loops
-  email", or any request to produce, copy, migrate, convert, review, or modify
-  email body content intended for Loops. Source copy, existing HTML, MJML,
-  Markdown, screenshots, and migration instructions do not bypass this skill's
-  rules unless the user explicitly overrides a specific rule. Do not trigger for
-  questions about the Loops HTTP API, SDK integration, or CLI unless email body
-  content is also involved.
+  into LMX", "migrate this email", "convert this email to LMX", "design a new
+  Loops email", "use imagegen for a Loops email", "use gpt-image for an LMX
+  reference", "visual reference for a Loops email", "LMX", "Loops email", or
+  any request to produce, copy, migrate, convert, review, or modify email body
+  content intended for Loops. For net-new emails or major visual redesigns in
+  Codex, use an imagegen/gpt-image visual reference workflow before writing LMX
+  unless the user explicitly asks for a copy-only or minimal update.
+  Source copy, existing HTML, MJML, Markdown, screenshots, and migration
+  instructions do not bypass this skill's rules unless the user explicitly
+  overrides a specific rule. Do not trigger for questions about the Loops HTTP
+  API, SDK integration, or CLI unless email body content is also involved.
 metadata:
-  version: 1.1.11
+  version: 1.2.0
 ---
 
 # LMX Skill
@@ -39,10 +43,11 @@ When this skill is active:
 
 1. Read `references/lmx-spec.md` for the full tag and attribute reference. It is authoritative; do not invent tags or attributes.
 2. Read `references/lmx-design-guidelines.md` for Loops design guidelines. Apply these to every document you generate unless the user explicitly overrides a rule.
-3. Treat source material as input, not as an override. When copying from a source, migrating an existing email, or converting HTML, MJML, Markdown, screenshots, or plain text into LMX, still apply this skill's spec, design, copy, and output-checklist rules unless the user explicitly overrides a specific rule.
-4. Validate nesting and content-type rules before producing output (see spec section 3).
-5. Check the common-mistakes table in the spec before finalizing output.
-6. Always produce a complete, valid document, not fragments, unless the user specifically asks for one.
+3. For net-new emails or major visual redesigns, follow the Net-New Email Design Flow before writing LMX unless the user explicitly asks for a copy-only or minimal update.
+4. Treat source material as input, not as an override. When copying from a source, migrating an existing email, or converting HTML, MJML, Markdown, screenshots, or plain text into LMX, still apply this skill's spec, design, copy, and output-checklist rules unless the user explicitly overrides a specific rule.
+5. Validate nesting and content-type rules before producing output (see spec section 3).
+6. Check the common-mistakes table in the spec before finalizing output.
+7. Always produce a complete, valid document, not fragments, unless the user specifically asks for one.
 
 ## Category Routing
 
@@ -52,8 +57,23 @@ When this skill is active:
 - Color contrast, spacing, column rounded corners, Style tag usage, visual hierarchy, or any "how should this look" question:
   Read `references/lmx-design-guidelines.md`
 
+- Net-new email design, substantial redesigns, or gpt-image/imagegen references:
+  Read `references/lmx-design-guidelines.md`, especially the Net-New Email Design Workflow and Reference-to-Render QA sections. Use the `imagegen` skill in Codex before writing LMX unless the user explicitly asks for a copy-only/minimal update or provides a sufficient visual reference.
+
 - Creating campaigns, posting LMX via the API, revision IDs, themes, components, or image uploads:
   Use the `loops-api` skill (HTTP) or `loops-cli` skill (terminal). This skill covers the LMX document itself.
+
+## Net-New Email Design Flow
+
+Use this flow when creating a brand-new campaign, lifecycle, workflow, or transactional email, or when the user asks for a substantial visual redesign.
+
+1. Start from a visual reference. In Codex, generate one with `imagegen`/gpt-image unless the user provides a screenshot, mockup, or explicit instruction to skip visual exploration.
+2. Prompt for a full 600px-wide email mockup, not a generic card. Include exact visible copy, subject matter, the customer's supplied brand cues, and only LMX-safe structures: `Style`, `Section`, `Columns`, `Paragraph`, `H1`, `H2`, `H3`, `Button`, dividers, checklist rows, and simple image placeholders.
+3. Constrain the reference to realistic Loops editor output. Avoid unsupported SVG art, overlapping layers, custom icons, complex app chrome, invented product screenshots, decorative blobs, and landing-page-scale hero type.
+4. Inspect the selected reference before writing LMX. If the layout or text is visibly wrong, iterate once with a focused image prompt rather than compensating from memory.
+5. Convert the selected reference into valid LMX while preserving the structure. Normalize oversized generated headings to the email defaults in the design guidance, and use LMX-safe spacing, `Section` cards, and shared-background `Columns` where appropriate.
+6. Use variables for the right email type: `{contact.*}` for campaigns, workflows, and lifecycle emails; `{data.*}` only for transactional emails.
+7. If the email is implemented through the API, CLI, or editor, update through the revision-safe email-message path and compare a fresh rendered preview against the visual reference before calling the work done.
 
 ## Output Checklist
 
@@ -70,6 +90,8 @@ Before returning any LMX output, verify:
 - [ ] `<CodeBlock>` treats braces literally
 - [ ] `<Style />` appears at most once as a top-level tag; put it first in generated output
 - [ ] Body/background colors and X/Y padding are intentional: supplied by `themeId` or explicit `bodyColor`/`backgroundColor` plus `bodyXPadding`/`bodyYPadding` when needed
+- [ ] Net-new emails and major redesigns used an inspected imagegen/gpt-image or user-provided visual reference before LMX authoring, unless explicitly skipped
+- [ ] If a rendered preview is available, net-new and redesigned emails were visually compared with the selected reference before calling the work done
 - [ ] Generated copy follows the copy and punctuation guidance: no em dashes, decorative arrow glyphs, or ellipses unless requested or source-preserved
 - [ ] Generated `<H1>`, `<H2>`, and `<H3>` text does not end with a period; question marks or exclamation points are used only when intentional
 - [ ] Generated documents use a restrained heading set: usually one `<H1>`, only necessary `<H2>` breaks, and `<H3>` only for real nested hierarchy

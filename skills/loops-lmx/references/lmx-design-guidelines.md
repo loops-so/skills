@@ -112,7 +112,7 @@ Keep body copy readable:
 - Body text is usually `15` to `18` px with comfortable line height.
 - Avoid lines that feel too wide or too close to the body edge.
 - Prefer whitespace, grouping, alignment, typography, and hierarchy before adding decorative surfaces.
-- Use one clear accent color with neutral grays and near-black text. For Loops-branded examples, `#fc5200` can be the accent, but do not force it onto another brand.
+- Use the customer's supplied brand colors, typography tone, and visual system when available. If no brand system is provided, choose one restrained accent color with neutral grays and near-black text.
 
 Avoid hero-scale type, decorative complexity, or many floating cards unless the source design explicitly calls for that treatment.
 
@@ -131,6 +131,67 @@ Translate the design into email-safe LMX:
 If a reference detail cannot be reproduced exactly in LMX, use the closest email-safe equivalent and keep the original hierarchy intact.
 
 When a rendered preview is available, compare it against the reference before calling the document done. Check composition, body width, X/Y padding, heading scale, wrapping, card padding, button size and placement, divider spacing, and footer placement. If the words are right but the layout is materially different, revise the LMX.
+
+---
+
+## Net-New Email Design Workflow
+
+For a brand-new campaign, lifecycle, workflow, or transactional email, start from a visual reference before writing LMX unless the user explicitly asks for a copy-only/minimal update. In Codex, use the available imagegen/gpt-image workflow. In other environments, use a user-provided screenshot/mockup or create a concise written layout reference first.
+
+Prompt image generation for a full email mockup, not a generic card or landing page. The reference should be implementable in LMX and should show the email body on a simple canvas.
+
+Suggested prompt shape:
+
+```text
+Use case: ui-mockup
+Asset type: Loops email design reference
+Primary request: Design a polished [email type] email for [purpose].
+Text (verbatim): "[visible text lines]"
+Style/medium: high-fidelity email UI mockup, 600px-wide email body
+Composition/framing: full email shown on a light gray canvas, crisp white body,
+  clear vertical rhythm, no overlapping elements
+Design language: realistic production-quality email, clear hierarchy, purposeful
+  spacing, simple grouping, every block earns its place
+Layout priorities: use spacing, grouping, alignment, typography, and hierarchy
+  first; use subtle surface tints, dividers, and borders only when needed
+Color palette: Use the customer's supplied brand palette. If no brand palette is
+  provided, choose one restrained accent color, near-black CTA, neutral grays,
+  and readable body text.
+Typography: compact email typography, restrained H1/H2 scale, no landing-page
+  hero type
+Constraints: Must be implementable in Loops LMX with Style, Section, Columns,
+  Paragraph, H1/H2/H3, Button, Divider, Image placeholders, and simple checklist
+  rows. No unsupported illustrations, no decorative blobs, no overlapping
+  layers, no custom icon systems, no invented product screenshots, no card-on-card
+  clutter, no unreadable text.
+```
+
+After generating the reference:
+
+1. Inspect the selected image before writing LMX. Do not rely on the prompt or file path alone.
+2. If the reference has wrong text, impossible layout, unreadable copy, or unsupported visual features, iterate once with a focused correction.
+3. Convert the selected structure to LMX. Preserve the layout hierarchy, but normalize generated heading sizes to the email defaults in this guide.
+4. Prefer email-safe equivalents for unsupported details: simple `Section` cards, shared-background `Columns`, subtle `blockColor` callouts, dividers, and ordinary spacing.
+5. Keep generated image output as the visual source of truth. The generated image is not the email artifact; the final artifact is valid LMX.
+
+---
+
+## Reference-to-Render QA
+
+For imagegen/gpt-image-based net-new emails and major redesigns, visual QA is required whenever a rendered Loops preview is available. Text checks are not enough because correct words can still produce a layout that misses the reference.
+
+Required comparison surfaces:
+
+- overall composition, alignment, body width, and density
+- heading scale, wrapping, hierarchy, and vertical rhythm
+- body/card width, padding, border, radius, and background treatment
+- pill, callout, columns, checklist rows, and button size/color/position
+- divider/footer placement and spacing
+- copy/content, including subject and preview text when applicable
+
+Compare the selected visual reference against a fresh rendered email preview. Normalize the comparison by using the same email content region, viewport, selected email, editor mode, crop, and scale where practical. If the rendered email has the right words but the layout is materially different from the reference, revise the LMX and compare again.
+
+If LMX cannot reproduce a reference detail, state which detail is unsupported, implement the closest email-safe equivalent, and verify that the result still preserves the reference's structure and visual hierarchy.
 
 ---
 
