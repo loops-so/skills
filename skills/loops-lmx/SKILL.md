@@ -19,7 +19,7 @@ description: >
   overrides a specific rule. Do not trigger for questions about the Loops HTTP
   API, SDK integration, or CLI unless email body content is also involved.
 metadata:
-  version: 1.2.1
+  version: 1.1.13
 ---
 
 # LMX Skill
