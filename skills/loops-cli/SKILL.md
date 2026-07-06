@@ -12,7 +12,7 @@ description: >
   api-key", "loops agent-context", "brew install loops-so/tap/loops", or any
   time the user wants to use Loops from the shell instead of application code.
 metadata:
-  version: 1.1.0
+  version: 1.1.1
 ---
 
 # Loops CLI Skill
@@ -27,8 +27,8 @@ Use this skill when the user needs to:
 - authenticate with Loops from the terminal
 - manage stored team keys or switch between them
 - run one-off contact, list, event, or transactional-email commands
-- create draft campaigns, update email-message content and upload images from the shell
-- list or inspect themes and reusable components for LMX
+- create draft campaigns, update email-message content, and upload images from the shell
+- list/get themes and reusable components for LMX
 - inspect CLI output in text or JSON locally
 
 This skill is for command-line usage, not application integrations or email-strategy review.
@@ -54,7 +54,7 @@ Official references:
 
 - Installation, auth flows, config resolution, global flags, and common Loops CLI workflows:
   Read `references/cli.md`
-- Campaigns, email messages, themes, components, revision handling, and LMX file flags:
+- Campaigns, email messages, themes, components, revision handling, LMX file flags, and uploads:
   Read `references/cli.md`. For LMX markup itself, also use the `loops-lmx` skill.
 
 If the task becomes application-code integration or exact HTTP payload design beyond the CLI, use the `loops-api` skill.
