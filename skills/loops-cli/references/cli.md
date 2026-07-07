@@ -32,7 +32,7 @@ Prefer SDKs or raw HTTP for application code.
 
 ## Installation
 
-The current CLI README describes the CLI as pre-release alpha software. Prefer the README as the source of truth if installation behavior seems to be moving.
+Prefer the official CLI docs as the source of truth if installation behavior seems to be moving.
 
 ### Homebrew
 
@@ -43,10 +43,10 @@ brew install loops-so/tap/loops
 ### Install script (macOS, Linux, Windows via WSL)
 
 ```bash
-curl -fsSL https://cli.loops.so | bash
+curl -fsSL https://install.loops.so/cli | sh
 ```
 
-To install a specific version or to a custom path, append `-s -- <version> <path>` to `bash` in the command above. The default install path is `~/.local/bin`.
+To install a specific version or to a custom path, append `-s -- <version> <path>` to `sh` in the command above. The default install path is `~/.local/bin`.
 
 If the user is working from source instead of using an installer, defer to the CLI repo README.
 
@@ -59,7 +59,7 @@ go install github.com/loops-so/cli/cmd/loops@latest
 ## Install script (Windows PowerShell)
 
 ```pwsh
-irm https://raw.githubusercontent.com/Loops-so/cli/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/loops-so/cli/main/install.ps1 | iex
 ```
 
 ## Auth And Configuration
@@ -75,10 +75,10 @@ Get the API key from `Settings > API` in Loops.
 
 ```bash
 # Save a key interactively, verify it, and make it the default
-loops auth login --name my-team
+loops auth login my-team
 
 # Save a key without verifying first and make it the default
-loops auth login --name my-team --skip-verify
+loops auth login my-team --skip-verify
 
 # List stored keys
 loops auth list
@@ -93,11 +93,11 @@ loops auth use --clear
 loops auth status
 
 # Remove a stored key
-loops auth logout --name my-team
+loops auth logout my-team
 ```
 
-Run `loops auth login` again with a different `--name` to store keys for multiple teams.
-Each `loops auth login --name ...` call also sets that stored key as the current default.
+Run `loops auth login <name>` again with a different name to store keys for multiple teams.
+Each `loops auth login <name>` call also sets that stored key as the current default.
 
 Use `--team <name>` on any command to select a specific stored key without changing the default.
 
@@ -139,7 +139,7 @@ Use this for a quick API-key check against the resolved config.
 
 ```bash
 loops agent-context
-loops version
+loops --version
 ```
 
 `agent-context` prints JSON describing every command, subcommand, and flag — useful when this reference is behind the installed CLI version.
@@ -204,8 +204,7 @@ loops lists list --output json
 ### Events
 
 ```bash
-loops events send \
-  --event signup \
+loops events send signup \
   --email user@example.com \
   --props ./event-props.json \
   --contact-props ./contact-props.json \
@@ -215,7 +214,6 @@ loops events send \
 
 Useful event flags:
 
-- `--event`
 - `--email` or `--user-id`
 - `--props path/to/file.json`
 - `--contact-props path/to/file.json`
@@ -227,22 +225,21 @@ If the JSON file passed to `--props` contains a top-level `eventProperties` obje
 ### Transactional emails
 
 ```bash
-# List published transactional emails
+# List transactional emails
 loops transactional list
 loops transactional list --per-page 20
 loops transactional list --cursor abc123 --output json
+loops transactional list --pick
 
 # Send
-loops transactional send \
-  --id cll42l54f20i1la0lfooe3z12 \
+loops transactional send cll42l54f20i1la0lfooe3z12 \
   --email user@example.com \
   -v firstName=Alex \
   -v resetLink=https://example.com/reset \
   --idempotency-key reset-user-123
 
 # Send with JSON vars and attachments
-loops transactional send \
-  --id cll42l54f20i1la0lfooe3z12 \
+loops transactional send cll42l54f20i1la0lfooe3z12 \
   --email user@example.com \
   -j ./vars.json \
   -A ./invoice.pdf \
@@ -251,7 +248,6 @@ loops transactional send \
 
 Useful transactional flags:
 
-- `--id`
 - `--email`
 - `-a, --add-to-audience`
 - `-v, --var KEY=value` (repeatable)
@@ -260,11 +256,12 @@ Useful transactional flags:
 - `--idempotency-key`
 - `--per-page`
 - `--cursor`
+- `--pick` (list; requires fzf; cannot combine with `--output json`)
 
 The CLI also exposes a top-level alias:
 
 ```bash
-loops send --id cll42l54f20i1la0lfooe3z12 --email user@example.com -v resetLink=https://example.com/reset
+loops send cll42l54f20i1la0lfooe3z12 --email user@example.com -v resetLink=https://example.com/reset
 ```
 
 This is the same transactional send flow as `loops transactional send`.
@@ -284,14 +281,19 @@ loops campaigns list --pick   # interactive fzf picker; copies IDs to clipboard
 # Create a draft campaign (prints campaignId, emailMessageId, contentRevisionId)
 loops campaigns create --name "Spring product announcement"
 
-# Get or rename a draft campaign
+# Get or update a draft campaign
 loops campaigns get <campaignId>
 loops campaigns update <campaignId> --name "Renamed announcement"
+loops campaigns update <campaignId> --audience-segment-id seg_123
+loops campaigns update <campaignId> --schedule-at 2026-08-01T12:00:00Z
 ```
 
 Useful campaign flags:
 
-- `--name` / `-n` (required on create and update)
+- `--name` / `-n` (required on create; optional on update)
+- `--campaign-group-id`, `--mailing-list-id`
+- `--audience-segment-id` or `--audience-filter-file`
+- `--schedule-now` or `--schedule-at <RFC3339 timestamp>`
 - `--per-page`, `--cursor` (list)
 - `--pick` (list; requires fzf; cannot combine with `--output json`)
 
@@ -314,6 +316,11 @@ loops email-messages update <emailMessageId> \
 
 # Or fetch the latest revision automatically (overwrites concurrent edits)
 loops email-messages update <emailMessageId> --force --lmx-file ./email.lmx
+
+# Send a test preview
+loops email-messages preview <emailMessageId> \
+  --email user@example.com \
+  --contact-prop firstName=Alex
 ```
 
 Useful email-message flags:
@@ -321,7 +328,10 @@ Useful email-message flags:
 - `--expected-revision-id` / `-r` — pass `contentRevisionId` from a prior `get` or `campaigns create` (mutually exclusive with `--force`)
 - `--force` / `-f` — fetch the current revision and use it
 - `--subject`, `--preview-text`, `--from-name`, `--from-email`, `--reply-to`
+- `--cc`, `--bcc`, `--language-code`, `--email-format`
+- `--contact-fallback`, `--event-fallback`, `--data-fallback`
 - `--lmx` or `--lmx-file` (mutually exclusive)
+- `preview`: `--email`, `--contact-prop`, `--event-prop`, `-v`/`--var`, or `-j`/`--json-vars`
 
 `--from-email` accepts a username only; if you pass `hello@example.com`, the CLI keeps `hello`.
 
@@ -335,7 +345,7 @@ loops themes list --pick
 loops themes get <themeId>
 ```
 
-Use theme IDs in LMX as `<Style themeId="..." />`. `themes get` prints style fields for reference.
+`themes get` prints style fields for reference.
 
 ### Components
 
@@ -345,7 +355,7 @@ loops components list --pick
 loops components get <componentId>
 ```
 
-Use component IDs in LMX as `<Component componentId="..." />`. `components get` prints the component LMX body.
+`components get` prints the component LMX body.
 
 ### Uploads
 
@@ -355,7 +365,7 @@ Upload files that can be used in email content.
 loops uploads create ./header.png
 ```
 
-Use the returned `finalUrl` in LMX `<Image>` tags.
+Use the returned `finalUrl` in LMX `<Image src="..." />` tags.
 
 By default the CLI sniffs the MIME type from the file contents. Override it with `--content-type` if needed:
 
