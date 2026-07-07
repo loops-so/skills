@@ -460,7 +460,7 @@ For LMX markup rules, use the separate `loops-lmx` skill.
 ##### Typical workflow
 
 1. `POST /v1/transactional-emails` with `{ "name": "..." }` — creates the transactional email and an empty draft email message. Save `id`, `draftEmailMessageId`, and `draftEmailMessageContentRevisionId`.
-2. `GET /v1/themes` and `GET /v1/components` — discover `themeId` and `componentId` values for LMX (optional).
+2. `GET /v1/themes` and `GET /v1/components`, then `GET /v1/themes/{themeId}` and `GET /v1/components/{componentId}` for likely matches.
 3. `POST /v1/email-messages/{draftEmailMessageId}` — set subject, sender fields, and `lmx`; pass `draftEmailMessageContentRevisionId` as `expectedRevisionId` on the first update.
 4. After each successful update, save the returned `contentRevisionId` and pass it as `expectedRevisionId` on the next update.
 5. `POST /v1/transactional-emails/{transactionalId}/publish` — publish the draft. The draft becomes the published version and the draft is cleared.
@@ -564,7 +564,7 @@ For LMX markup rules and design guidance, use the separate `loops-lmx` skill. Co
 
 1. Optionally `GET /v1/campaign-groups`, `GET /v1/audience-segments`, and `GET /v1/lists` to discover group, segment, and mailing-list IDs.
 2. `POST /v1/campaigns` with `{ "name": "..." }` and optional `campaignGroupId`, `mailingListId`, `audienceSegmentId`, `audienceFilter`, or `scheduling` — saves `id`, `emailMessageId`, and `emailMessageContentRevisionId`.
-3. `GET /v1/themes` and `GET /v1/components` — discover `themeId` and `componentId` values for LMX.
+3. `GET /v1/themes` and `GET /v1/components`, then `GET /v1/themes/{themeId}` and `GET /v1/components/{componentId}` for likely matches.
 4. `POST /v1/email-messages/{emailMessageId}` — set subject, sender fields, and `lmx`; pass `emailMessageContentRevisionId` as `expectedRevisionId` on the first update.
 5. After each successful update, save the returned `contentRevisionId` and pass it as `expectedRevisionId` on the next update to avoid `409 Conflict` from stale revisions.
 6. Optionally `POST /v1/email-messages/{emailMessageId}/preview` to send a test preview before scheduling or sending from the dashboard.
@@ -805,6 +805,18 @@ Supplying a field the parent cannot reference returns `400`. Returns `429` when 
 
 Returns `{ "id": "email_message_id" }` on success.
 
+#### Theme and component context for LMX
+
+Use these endpoints when the LMX design guidance calls for Loops-native brand context:
+
+1. `GET /v1/themes?perPage=20` to list available themes.
+2. `GET /v1/themes/{themeId}` to inspect theme colors, fonts, body/background treatment, and button defaults.
+3. `GET /v1/components?perPage=20` to list reusable components.
+4. `GET /v1/components/{componentId}` to inspect component LMX bodies.
+5. Reference selected assets with `<Style themeId="..." />` and `<Component componentId="..." />`.
+6. Use `/v1/uploads` when the selected implementation needs a new image asset.
+7. Update email-message content via `POST /v1/email-messages/{emailMessageId}` with the latest `expectedRevisionId`; save the returned `contentRevisionId` for the next update.
+
 #### Themes
 
 ##### List themes
@@ -874,7 +886,7 @@ Returns `400` for invalid request bodies or unsupported `contentType` (response 
 POST /v1/uploads/{id}/complete
 ```
 
-Use the returned `emailAssetId` as `{id}` to finalize after the `PUT` upload succeeds. Success returns `emailAssetId` and `finalUrl`, which you can use in LMX `<Image url="..." />` attributes.
+Use the returned `emailAssetId` as `{id}` to finalize after the `PUT` upload succeeds. Success returns `emailAssetId` and `finalUrl`, which you can use in LMX `<Image src="..." />` attributes.
 
 Returns `400` if the upload id is missing or the uploaded file has an unsupported content type. Returns `404` if the upload is not found.
 
@@ -934,7 +946,10 @@ const [themes, components] = await Promise.all([
   ),
 ]);
 
-// Upload an image to Loops and include the image URL in the LMX.
+// Inspect candidate themes/components before writing LMX or uploading assets.
+// Choose explicit IDs from the inspected team-owned assets; do not infer them
+// from list order or component names.
+
 // Flow: create upload -> PUT to presignedUrl -> complete upload.
 const imageBytes = /* Uint8Array|ArrayBuffer|Buffer */;
 const contentType = "image/png";
@@ -966,10 +981,8 @@ const completedUpload = await fetch(
 const imageUrl = completedUpload.finalUrl;
 
 const lmx = `
-<Style themeId="default" />
 <Paragraph><Text>Hey there, here is what's new.</Text></Paragraph>
-<Image url="${imageUrl}" alt="New product showcase" />
-<Component componentId="logo" />`;
+<Image src="${imageUrl}" alt="New product showcase" />`;
 
 const updated = await fetch(
   `https://app.loops.so/api/v1/email-messages/${created.emailMessageId}`,
@@ -1169,7 +1182,7 @@ Most v1 contact, event, and transactional request body string values are limited
 - **Upload limits**: Max file size is 4 MB. Max 50 uploads per 24 hours per team.
 - **`fromEmail` on email messages**: Pass only the sender username, such as `"updates"`, not `"updates@example.com"`.
 - **Content revision IDs**: After `POST /v1/campaigns`, use `emailMessageContentRevisionId` as the first `expectedRevisionId`. After each `POST /v1/email-messages/{id}`, save `contentRevisionId` for the next update.
-- **Themes and components before LMX**: List themes and components first so `<Style themeId="..." />` and `<Component componentId="..." />` reference real IDs.
+- **Themes and components before LMX**: List and get themes/components so `<Style themeId="..." />` and `<Component componentId="..." />` reference real IDs.
 - **Draft-only writes**: Campaign and email-message updates return `409` once a campaign leaves draft status.
 - **Campaign audience**: Target a `mailingListId`, `audienceSegmentId`, or inline `audienceFilter`. Setting `audienceSegmentId` clears `audienceFilter`.
 - **Campaign scheduling**: Use `scheduling.method` of `"now"` or `"schedule"`. `timestamp` is required and must be in the future when scheduling.

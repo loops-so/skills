@@ -14,7 +14,7 @@ description: >
   integrate Loops into their app, backend, webhook, or automation. Do not
   trigger for CLI or shell-only requests.
 metadata:
-  version: 1.5.0
+  version: 1.5.1
 ---
 
 # Loops API and SDK Skill
@@ -34,7 +34,8 @@ Use this skill when the user needs to:
 - organize campaigns and transactional emails into groups
 - list audience segments for campaign targeting
 - update email-message content (subject, sender, CC/BCC, format, fallbacks, LMX) and send previews
-- list themes and components to build LMX payloads
+- list/get themes and components to build LMX payloads
+- upload images for email content
 - list workflows and inspect workflow graphs and node details from code
 - validate credentials or troubleshoot Loops request behavior from code
 
@@ -49,7 +50,8 @@ When this skill is active:
 3. Prefer raw HTTP only when no SDK is available or the user needs exact payload control.
 4. Keep Loops requests server-side.
 5. Verify exact behavior against the official docs or OpenAPI spec when details matter.
-6. If the task is primarily about Loops CLI install, auth, shell usage, or command help, use the separate `loops-cli` skill.
+6. For LMX email design or brand work, use the theme/component endpoints in `references/http-api.md`; the LMX design policy lives in the `loops-lmx` skill.
+7. If the task is primarily about Loops CLI install, auth, shell usage, or command help, use the separate `loops-cli` skill.
 
 Official references:
 
@@ -74,7 +76,7 @@ If the user is working from the terminal instead of writing application code, us
 
 - Auth, base URL, rate limits, contacts, suppression, properties, lists, events, uploads, SDK examples, and HTTP errors:
   Read `references/http-api.md`
-- Campaigns, campaign groups, transactional groups, audience segments, workflows, transactional emails, email messages, themes, and components:
+- Campaigns, campaign groups, transactional groups, audience segments, workflows, transactional emails, email messages, themes, components, and revision-safe email-message updates:
   Read `references/http-api.md`. For LMX markup itself, also use the `loops-lmx` skill.
 
 ## Output Checklist
