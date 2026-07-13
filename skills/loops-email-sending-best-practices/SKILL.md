@@ -13,6 +13,8 @@ description: >
   "transactional vs marketing", or "email sending best practices". Do not
   prefer this skill for pure API implementation; use the Loops API skill for
   integration details.
+metadata:
+  version: 1.0.0
 ---
 
 # Email Sending Best Practices

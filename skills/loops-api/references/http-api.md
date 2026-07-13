@@ -776,7 +776,7 @@ Updates draft email-message fields. All body fields are optional in the schema, 
 
 Fallback maps (`contactPropertiesFallbacks`, `eventPropertiesFallbacks`, `dataVariablesFallbacks`) are full replacements of the existing map. Send `null` as a value to delete an existing fallback key.
 
-LMX dynamic tags like `{data.}` and `{contact.}` can be inserted in all fields apart from `expectedRevisionId`.
+LMX dynamic tags like `{contact.}`, `{event.}`, and `{data.}` can be inserted in all fields apart from `expectedRevisionId`. Which namespaces are valid depends on the parent email type: campaigns support `{contact.}`; workflow emails support `{contact.}` and `{event.}`; transactional emails support `{data.}`.
 
 On success, the response includes a new `contentRevisionId` and may include non-fatal `warnings` from LMX compilation. LMX compile failures (invalid tags, missing required attributes such as `<Image src>`, `<Component componentId>`, `<Icon name>`, or `<Link href>`) return HTTP `422`. LMX payloads larger than **100 KB** return HTTP `413`.
 
@@ -1028,7 +1028,7 @@ await fetch(
       subject: "Reset your password",
       fromName: "Loops",
       fromEmail: "hello",
-      lmx: '<Style themeId="default" />\n<Paragraph><Text>Click {dataVariables.resetLink} to reset.</Text></Paragraph>',
+      lmx: '<Style themeId="default" />\n<Paragraph><Text>Click {data.resetLink} to reset.</Text></Paragraph>',
     }),
   }
 );

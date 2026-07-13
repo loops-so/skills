@@ -19,7 +19,7 @@ description: >
   overrides a specific rule. Do not trigger for questions about the Loops HTTP
   API, SDK integration, or CLI unless email body content is also involved.
 metadata:
-  version: 1.1.14
+  version: 1.1.15
 ---
 
 # LMX Skill
@@ -73,7 +73,7 @@ Use this flow when creating a brand-new campaign, lifecycle, workflow, or transa
 4. Constrain generated references to realistic Loops editor output. Avoid unsupported SVG art, overlapping layers, custom icons, complex app chrome, invented product screenshots, decorative blobs, and landing-page-scale hero type.
 5. Inspect the selected reference before writing LMX. If the layout or text is visibly wrong, iterate once with a focused prompt rather than compensating from memory.
 6. Convert the selected reference or Loops-native structure into valid LMX while preserving the hierarchy. Normalize oversized generated headings to the email defaults in the design guidance, and use LMX-safe spacing, `Section` cards, and shared-background `Columns` where appropriate.
-7. Use variables for the right email type: `{contact.*}` for campaigns, workflows, and lifecycle emails; `{data.*}` only for transactional emails.
+7. Use variables for the right email type: `{contact.*}` for campaigns and workflow emails; `{event.*}` for workflow emails when the value comes from the triggering event; `{data.*}` only for transactional emails.
 8. If the email is implemented through the API, CLI, or editor, update through the revision-safe email-message path and compare a fresh rendered Loops editor preview against the visual reference or Loops-native source before calling the work done.
 
 ## Output Checklist
@@ -86,7 +86,7 @@ Before returning any LMX output, verify:
 - [ ] Required attrs are present: `src` on `<Image />`, `componentId` on `<Component>`, `name` on `<Icon />`, and `href` on `<Link>`
 - [ ] No text or inline tags at the top level
 - [ ] Variables use explicit LMX namespaces and only appear where supported: inline content, button text, `<Button href>`, `<Link href>`, `<Image alt/href/dynamicSrc>`, and `<Section href>`
-- [ ] Campaign content uses `{contact.apiName}`; transactional content uses `{data.variableName}` (not unprefixed `{variableName}` or `{DATA_VARIABLE:...}`)
+- [ ] Variable namespaces match the email type: campaigns use `{contact.apiName}`; workflow emails use `{contact.apiName}` and/or `{event.propertyName}`; transactional emails use `{data.variableName}` (not unprefixed `{variableName}` or `{DATA_VARIABLE:...}`)
 - [ ] No inline fallback syntax is invented; fallbacks live outside the LMX string
 - [ ] `<Button>` text has no inline tags, but can contain variables; include `href` for clickable CTA buttons
 - [ ] `<CodeBlock>` treats braces literally
