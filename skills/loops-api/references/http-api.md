@@ -198,7 +198,7 @@ Returns `[{ id, name, description, isPublic }]`. Use the `id` values in `mailing
 
 ### Audience Segments
 
-Audience segments are saved audience filters. Use them to target draft campaigns via `audienceSegmentId` on create or update. Segments are read-only via the API.
+Audience segments are saved audience filters. Use them to target draft campaigns or workflow audience-filter nodes via `audienceSegmentId`.
 
 #### List audience segments
 
@@ -216,9 +216,56 @@ GET /v1/audience-segments/{audienceSegmentId}
 
 Returns the segment metadata and its `filter` tree (same shape as `audienceFilter` on campaigns).
 
+#### Create an audience segment
+
+```
+POST /v1/audience-segments
+```
+
+```jsonc
+{
+  "name": "Active users",
+  "description": "Opened a campaign in the last 30 days",
+  "filter": {
+    "match": "all",
+    "conditions": [
+      {
+        "type": "property",
+        "key": "planTier",
+        "operator": "equals",
+        "value": "pro"
+      }
+    ]
+  }
+}
+```
+
+`name` and `filter` are required. `name` must be unique within the team (max 255 chars). `description` is optional (max 1000 chars). Filter shape matches campaign `audienceFilter`. Returns `400` for invalid bodies, duplicate names, or filters with too many conditions. Returns `404` if the filter references a campaign, workflow, or workflow email that does not exist.
+
 ### Workflows
 
-Workflows are Loops automations (triggered emails, timers, branches, experiments, and more). The workflow API is read-only: list workflows, fetch a simplified graph, or load full detail for a single node. The workflow API must be enabled for your team; otherwise these endpoints return `401`.
+Workflows are Loops automations (triggered emails, timers, branches, experiments, and more). The workflow API can list, create, and mutate workflow graphs and nodes. The workflow API must be enabled for your team; otherwise these endpoints return `401`.
+
+#### Revision tokens and queued contacts
+
+Most workflow mutations require `expectedRevisionId` matching the latest `workflowRevisionId` from a read or mutation. Older workflows may return `workflowRevisionId: null` until their first revision-aware mutation — pass `null` back as `expectedRevisionId` in that case. Stale tokens return `409 Conflict`.
+
+Destructive changes (delete nodes, change mailing list) can discard contacts queued in the workflow:
+
+- Default `queuedContactPolicy` is `"fail"`. If queued contacts would be removed, the API returns `"status": "queuedContactsFound"` instead of mutating.
+- Retry with `queuedContactPolicy: "discard"` to apply the change and discard those contacts.
+- Use `dryRun: true` to preview impact without mutating.
+
+Public workflows are limited to **300 nodes**. Generated children count toward that limit.
+
+#### Typical workflow build sequence
+
+1. `POST /v1/workflows` with a name — creates a draft with a blank trigger and exit node; save `id` and `workflowRevisionId`.
+2. Optionally set `mailingListId` via `POST /v1/workflows/{workflowId}/mailing-list`.
+3. Configure the trigger with `POST /v1/workflows/{workflowId}/nodes/{nodeId}` (for event triggers, use `GET /v1/event-patterns` first).
+4. Insert nodes with `POST /v1/workflows/{workflowId}/nodes` (`insertMode: "between"` or `"before"`), then update each node's config.
+5. For `SendEmailAction` nodes, edit email content via `POST /v1/email-messages/{emailMessageId}` using the returned `emailMessageId`.
+6. Always pass the latest `workflowRevisionId` as `expectedRevisionId` on the next mutation.
 
 #### List workflows
 
@@ -226,7 +273,7 @@ Workflows are Loops automations (triggered emails, timers, branches, experiments
 GET /v1/workflows?perPage=20&cursor=...
 ```
 
-`perPage` must be between 10 and 50 (default 20). Returns paginated `data` with `id`, `name`, `createdAt`, and `updatedAt`, most recently created first.
+`perPage` must be between 10 and 50 (default 20). Returns paginated `data` with `id`, `name`, `createdAt`, and `updatedAt`.
 
 ```json
 {
@@ -251,27 +298,48 @@ GET /v1/workflows?perPage=20&cursor=...
 
 Returns `400` for invalid `perPage` or `cursor` values.
 
+#### Create a workflow
+
+```
+POST /v1/workflows
+```
+
+```jsonc
+{
+  "name": "Onboarding drip",
+  "description": "Welcome new signups",
+  "mailingListId": "cm_abc123"
+}
+```
+
+`name` is required. `description` and `mailingListId` are optional (`mailingListId` may be `null`). Creates a draft workflow with a blank trigger and exit node. Returns a `SimplifiedWorkflow`. After creation, change the mailing list with `/v1/workflows/{workflowId}/mailing-list`. Returns `500` if workflow creation is unavailable for the team.
+
 #### Get a workflow
 
 ```
 GET /v1/workflows/{workflowId}
 ```
 
-Returns a simplified workflow graph with `id`, `name`, `description`, `emoji`, `mailingListId`, `rootNodeId`, and a `nodes` map keyed by node ID.
+Returns a simplified workflow graph with `id`, `workflowRevisionId`, `status`, `name`, `description`, `mailingListId`, `rootNodeId`, and a `nodes` map keyed by node ID.
+
+`status` is one of `Draft`, `Sending`, `Paused`, or `PausedAndQueueing`.
 
 Each node includes `typeName` and `nextNodeIds`. Supported `typeName` values:
 
-- **Triggers**: `SignupTrigger`, `EventTrigger` (`eventName`, `reEligible`), `ContactPropertyTrigger` (`contactPropertyQuery`, `reEligible`), `AddToListTrigger` (`mailingList`, `reEligible`), `BlankTrigger`
-- **Actions and logic**: `AudienceFilter`, `TimerAction` (`amount`, `unit`), `SendEmailAction` (`emailMessageId`, `subject`), `ExitAction`, `BranchNode`, `ExperimentBranchNode` (`samplingRate`, `url`, `experimentId`, `experimentType`), `VariantNode` (`variantId`, `isControl`)
+- **Triggers**: `SignupTrigger`, `EventTrigger` (`eventName`, `reEligible`), `ContactPropertyTrigger` (`contactPropertyQuery`, `reEligible`), `AddToListTrigger` (`mailingListId`, `reEligible`), `BlankTrigger`
+- **Actions and logic**: `AudienceFilter`, `TimerAction` (`amount`, `unit`), `SendEmailAction` (`emailMessageId`, `subject`), `ExitAction`, `BranchNode`, `ExperimentBranchNode` (`samplingRate`), `VariantNode` (`isControl`)
 
-`TimerAction` `unit` values are `m` (minutes), `h` (hours), `d` (days), and `s` (seconds). `ExperimentBranchNode` `experimentType` is `webhook` or `autosplit`.
+`TimerAction` `unit` values are `m` (minutes), `h` (hours), and `d` (days). Set `amount` to `0` to move to the next node immediately. `reEligible` matches the UI "Trigger frequency" option: `true` allows re-entry on every match; `false` means contacts enter once.
+
+Use `GET /v1/workflows/{workflowId}/nodes/{nodeId}` for full node detail.
 
 ```jsonc
 {
   "id": "wf_abc123",
+  "workflowRevisionId": "rev_abc123",
+  "status": "Draft",
   "name": "Onboarding drip",
   "description": "Welcome new signups",
-  "emoji": "👋",
   "mailingListId": "cm_abc123",
   "rootNodeId": "node_trigger",
   "nodes": {
@@ -303,27 +371,226 @@ Each node includes `typeName` and `nextNodeIds`. Supported `typeName` values:
 
 Returns `400` for an invalid `workflowId`. Returns `404` if the workflow is not found.
 
-#### Get workflow node details
+#### Update a workflow
+
+```
+POST /v1/workflows/{workflowId}
+```
+
+Updates display properties only. At least one of `name` or `description` must be provided. To change the mailing list, use `/v1/workflows/{workflowId}/mailing-list` instead (mailing-list changes may remove queued contacts).
+
+```jsonc
+{
+  "expectedRevisionId": "rev_abc123",
+  "name": "Onboarding drip v2",
+  "description": "Updated welcome sequence"
+}
+```
+
+Returns the updated `SimplifiedWorkflow`. Returns `409` if `expectedRevisionId` is stale.
+
+#### Change workflow mailing list
+
+```
+POST /v1/workflows/{workflowId}/mailing-list
+```
+
+```jsonc
+{
+  "expectedRevisionId": "rev_abc123",
+  "mailingListId": "cm_newlist",
+  "dryRun": true,
+  "queuedContactPolicy": "fail"
+}
+```
+
+`mailingListId` is required and may be `null` to clear the list. Clearing does not discard queued contacts. Assigning a new list can return `"status": "queuedContactsFound"`; retry with `queuedContactPolicy: "discard"` to apply.
+
+Success responses are one of:
+
+- `{ "status": "dryRun" | "queuedContactsFound", "mailingListId", "queuedContactCount", "queuedContactLimitReached" }`
+- `{ "status": "updated", "mailingListId", "workflowRevisionId", "queuedContactCount", "queuedContactLimitReached" }`
+
+#### Create a workflow node
+
+```
+POST /v1/workflows/{workflowId}/nodes
+```
+
+Creates a new default node and returns it with the latest workflow. Choose placement with `insertMode`:
+
+- `between` — place between an existing `fromNodeId` → `toNodeId` connection
+- `before` — place before `beforeNodeId` (target must have a parent and cannot be a trigger)
+
+Creatable `nodeTypeName` values: `AudienceFilter`, `BranchNode`, `ExperimentBranchNode`, `TimerAction`, `SendEmailAction`, `VariantNode`. Trigger nodes and `ExitAction` cannot be created via the API.
+
+New nodes start with defaults; update them after creation. Branch creates also spawn children:
+
+- `BranchNode` creates two `AudienceFilter` children (adds 3 nodes total)
+- `ExperimentBranchNode` creates two regular `VariantNode` children plus one control `VariantNode` (adds 4 nodes total)
+
+To add another branch under an existing branch/experiment node, use `/nodes/{nodeId}/add-branch` instead.
+
+```jsonc
+{
+  "expectedRevisionId": "rev_abc123",
+  "insertMode": "between",
+  "nodeTypeName": "TimerAction",
+  "fromNodeId": "node_trigger",
+  "toNodeId": "node_exit"
+}
+```
+
+```jsonc
+{
+  "expectedRevisionId": "rev_abc123",
+  "insertMode": "before",
+  "nodeTypeName": "SendEmailAction",
+  "beforeNodeId": "node_exit"
+}
+```
+
+Response shape: `{ "node": { ...createdNode, "workflowRevisionId", "createdChildNodes"? }, "workflow": SimplifiedWorkflow }`.
+
+#### Add a branch
+
+```
+POST /v1/workflows/{workflowId}/nodes/{nodeId}/add-branch
+```
+
+Adds one child under an existing `BranchNode` or `ExperimentBranchNode`:
+
+- Under `BranchNode` → creates one `AudienceFilter`
+- Under `ExperimentBranchNode` → creates one `VariantNode`
+
+```jsonc
+{
+  "expectedRevisionId": "rev_abc123"
+}
+```
+
+Does not accept node configuration fields; update the child afterward. Adds 1 node toward the 300-node cap. Returns `{ "node": ..., "workflow": ... }`.
+
+#### Get a workflow node
 
 ```
 GET /v1/workflows/{workflowId}/nodes/{nodeId}
 ```
 
-Returns full detail for a single node. All node types include `id`, `workflowId`, `typeName`, and `nextNodeIds`. Type-specific fields match the simplified graph, with additional detail where applicable:
+Returns full detail for a single node plus `workflowRevisionId`. All node types include `id`, `workflowId`, `typeName`, and `nextNodeIds`. Type-specific fields:
 
 - **`EventTrigger`**: `eventName`, `eventProperties` (array of `{ name, type }` where `type` is `string`, `number`, `boolean`, or `date`), `reEligible`
 - **`ContactPropertyTrigger`**: `contactPropertyQuery`, `reEligible`
-- **`AddToListTrigger`**: `reEligible`
-- **`AudienceFilter`**: `audienceFilter`, `audienceSegmentId`
+- **`AddToListTrigger`**: `mailingListId`, `reEligible`
+- **`AudienceFilter`**: `audienceFilter`, `audienceSegmentId`, `appliesDownstream`
 - **`TimerAction`**: `amount`, `unit`
-- **`SendEmailAction`**: `subject`
-- **`BranchNode`**: `evalStrategy`
-- **`ExperimentBranchNode`**: `samplingRate`, `url`, `experimentId`, `experimentType`
-- **`VariantNode`**: `variantId`, `isControl`
+- **`SendEmailAction`**: `emailMessageId`, `subject`
+- **`ExperimentBranchNode`**: `samplingRate` (0–100; percentage sent to variant branches; remainder goes to control; `100` sends all to variants)
+- **`VariantNode`**: `isControl`
 
-`contactPropertyQuery` compares a contact property with `key`, `is`, and `was` comparisons. Each comparison has `operator` and `value`. Operators include `any`, `contains`, `not_contains`, `empty`, `not_empty`, `equal`, `not_equal`, `greater_than`, `less_than`, `true`, `false`, `numeric_equal`, `numeric_not_equal`, `date_empty`, `date_not_empty`, `after`, `before`, `between`, `campaign`, `any_loop_email`, `specific_loop_email`, `accepted_opt_in`, `rejected_opt_in`, `pending_opt_in`, and `not_opt_in`.
+`contactPropertyQuery` compares a contact property with `key`, `is`, and `was` comparisons. Each comparison has `operator` and `value`. In updates, `key` must resolve to an existing contact property available for Contact Updated triggers (hidden/unsupported fields like `createdAt`, `notes`, and computed properties are rejected).
 
-Returns `400` for invalid `workflowId` or `nodeId`. Returns `404` if the workflow or node is not found.
+`was` can use any operator for the property type. `is` uses the same operators except number and boolean properties cannot use `empty`. Operators by type:
+
+- **String**: `any`, `equal`, `not_equal`, `contains`, `not_contains`, `empty`, `not_empty`
+- **Number**: `any`, `greater_than`, `less_than`, `numeric_equal`, `numeric_not_equal`, `empty`, `not_empty`
+- **Boolean**: `any`, `true`, `false`, `empty`, `not_empty`
+- **Date**: `any`, `empty`, `not_empty`, `after`, `before`, `between`
+
+`appliesDownstream` on `AudienceFilter` matches the UI "Filter scope" option: `true` applies to all downstream nodes; `false` applies only to the current node.
+
+Returns `400` for invalid IDs. Returns `404` if the workflow or node is not found.
+
+#### Update a workflow node
+
+```
+POST /v1/workflows/{workflowId}/nodes/{nodeId}
+```
+
+Updates workflow-node-owned fields. Shared resources (email messages, audience segments) should be updated through their own APIs. Trigger updates may include `typeName` to change one trigger type to another.
+
+```jsonc
+{
+  "expectedRevisionId": "rev_abc123",
+  "payload": {
+    "typeName": "EventTrigger",
+    "eventName": "signup",
+    "reEligible": false
+  }
+}
+```
+
+Payload shapes by node type (all fields optional within each payload except where noted; at least one field required):
+
+| Node | Payload fields |
+| --- | --- |
+| `SignupTrigger` | `typeName: "SignupTrigger"` (required when switching to this type) |
+| `EventTrigger` | `typeName?`, `eventPatternId` or `eventName` (not both; set either to `null` to clear), `reEligible?` |
+| `ContactPropertyTrigger` | `typeName?`, `contactPropertyQuery?`, `reEligible?` |
+| `AddToListTrigger` | `typeName?`, `reEligible?` |
+| `AudienceFilter` | `audienceSegmentId?`, `audienceFilter?`, `appliesDownstream?` |
+| `TimerAction` | `amount?`, `unit?` |
+| `ExperimentBranchNode` | `samplingRate?` |
+| `VariantNode` | `isControl?` (`true` makes this the control and clears the previous control) |
+
+`SendEmailAction`, `BranchNode`, `BlankTrigger`, and `ExitAction` are not updated through this payload set (email content via `/v1/email-messages/{emailMessageId}`). Returns `501` if a node update is not implemented. Returns `409` if `expectedRevisionId` is stale.
+
+#### Delete a workflow node
+
+```
+DELETE /v1/workflows/{workflowId}/nodes/{nodeId}
+```
+
+```jsonc
+{
+  "expectedRevisionId": "rev_abc123",
+  "dryRun": true,
+  "queuedContactPolicy": "fail"
+}
+```
+
+If contacts are queued at the node, returns `"status": "queuedContactsFound"` instead of deleting. Retry with `queuedContactPolicy: "discard"` to delete and discard those contacts.
+
+#### Delete workflow nodes recursively
+
+```
+DELETE /v1/workflows/{workflowId}/nodes/{nodeId}/recursive
+```
+
+Deletes a node and its downstream subtree. Same request body and queued-contact behavior as single-node delete. If contacts are queued at any node that would be deleted, returns `"status": "queuedContactsFound"`.
+
+Delete responses are one of:
+
+- `{ "status": "dryRun" | "queuedContactsFound", "nodeIds", "queuedContactCount", "queuedContactLimitReached" }`
+- `{ "status": "deleted", "nodeIds", "workflowRevisionId", "queuedContactCount", "queuedContactLimitReached" }`
+
+### Event Patterns
+
+Event patterns are used by workflow `EventTrigger` nodes. The workflow API beta must be enabled; otherwise these endpoints return `401`.
+
+#### List event patterns
+
+```
+GET /v1/event-patterns?perPage=20&cursor=...
+```
+
+`perPage` must be between 10 and 50 (default 20). Returns paginated summaries with `id`, `eventName`, and `incomingWebhookPlatform` (`clerk`, `polar`, `stripe`, `supabase`, or `null` for custom events).
+
+#### Get an event pattern by ID
+
+```
+GET /v1/event-patterns/{eventPatternId}
+```
+
+Returns `id`, `eventName`, `eventProperties` (`{ name, type }[]`), and `incomingWebhookPlatform`.
+
+#### Get an event pattern by name
+
+```
+GET /v1/event-patterns/by-name/{eventName}
+```
+
+Same response as get-by-ID. Event names are case-sensitive (`PaymentReceived` ≠ `paymentReceived`) and should be URL-encoded if they contain special characters.
 
 ### Dedicated Sending IPs
 
@@ -774,7 +1041,7 @@ Updates draft email-message fields. All body fields are optional in the schema, 
 
 `ccEmail` and `bccEmail` require CC/BCC to be enabled for the team. `languageCode` requires translation to be enabled.
 
-Fallback maps (`contactPropertiesFallbacks`, `eventPropertiesFallbacks`, `dataVariablesFallbacks`) are full replacements of the existing map. Send `null` as a value to delete an existing fallback key.
+Fallback maps (`contactPropertiesFallbacks`, `eventPropertiesFallbacks`, `dataVariablesFallbacks`) use per-key merge: a string value sets the fallback, `null` deletes it, and omitted keys are left unchanged.
 
 LMX dynamic tags like `{contact.}`, `{event.}`, and `{data.}` can be inserted in all fields apart from `expectedRevisionId`. Which namespaces are valid depends on the parent email type: campaigns support `{contact.}`; workflow emails support `{contact.}` and `{event.}`; transactional emails support `{data.}`.
 
@@ -804,6 +1071,14 @@ Supplying a field the parent cannot reference returns `400`. Returns `429` when 
 ```
 
 Returns `{ "id": "email_message_id" }` on success.
+
+##### Run Guardian checks on an email message
+
+```
+GET /v1/email-messages/{emailMessageId}/guardian
+```
+
+Runs the same Guardian validation as the Loops editor and returns `errors` (must be resolved before publish) and `warnings` (advisory). Checks depend on parent type: campaign (contact properties + links/buttons), workflow (contact + event properties + links/buttons), transactional (data variables + links/buttons). Returns `409` for MJML email messages.
 
 #### Theme and component context for LMX
 
@@ -1162,11 +1437,12 @@ curl -X POST https://app.loops.so/api/v1/contacts/create \
 | --- | --- | --- |
 | 401 | Invalid API key, or workflow/content API not enabled | Check the key is correct and has not been revoked; confirm the workflow or content API is enabled for your team |
 | 400 | Bad request | Check required fields and value types |
-| 404 | Not found | Contact, transactional email, campaign, campaign group, transactional group, audience segment, workflow, workflow node, theme, component, email message, or upload ID does not exist |
-| 409 | Conflict | Email or userId already exists, idempotency key was reused, campaign is not draft, transactional email has no draft to publish, email message uses MJML or content cannot be parsed, `expectedRevisionId` is stale, or a reserved group name was used |
+| 404 | Not found | Contact, transactional email, campaign, campaign group, transactional group, audience segment, workflow, workflow node, event pattern, theme, component, email message, or upload ID does not exist |
+| 409 | Conflict | Email or userId already exists, idempotency key was reused, campaign is not draft, transactional email has no draft to publish, email message uses MJML or content cannot be parsed, email/workflow `expectedRevisionId` is stale, or a reserved group name was used |
 | 413 | Payload too large | LMX body exceeds 100 KB, or upload `contentLength` exceeds 4 MB |
-| 422 | LMX failed to compile | Fix invalid LMX, missing required LMX attributes, or XML escaping |
-| 429 | Rate limited, or daily preview limit is reached | Back off and retry |
+| 422 | LMX failed to compile, or draft failed validation / unsafe content | Fix invalid LMX, missing required LMX attributes, XML escaping, or Guardian/publish validation issues |
+| 429 | Rate limited, daily preview limit reached, or upload limit exceeded | Back off and retry |
+| 501 | Not implemented | Requested workflow node update is not supported |
 | CORS error | Client-side request | Move the API call to your server |
 
 Most v1 contact, event, and transactional request body string values are limited to **500 characters**. LMX content on email-message updates follows the LMX payload limit.
@@ -1187,9 +1463,11 @@ Most v1 contact, event, and transactional request body string values are limited
 - **Campaign audience**: Target a `mailingListId`, `audienceSegmentId`, or inline `audienceFilter`. Setting `audienceSegmentId` clears `audienceFilter`.
 - **Campaign scheduling**: Use `scheduling.method` of `"now"` or `"schedule"`. `timestamp` is required and must be in the future when scheduling.
 - **Groups**: Campaign and transactional groups cannot be named `"Unsorted"`, and the Unsorted group cannot be edited. Omit `campaignGroupId` or `transactionalGroupId` on create to use the team's default group.
-- **Workflow inspection**: Use `GET /v1/workflows` to list workflows, `GET /v1/workflows/{workflowId}` for the simplified graph, and `GET /v1/workflows/{workflowId}/nodes/{nodeId}` for full node detail. The workflow API is read-only and must be enabled for your team.
+- **Workflow mutations**: Create with `POST /v1/workflows`, inspect with `GET /v1/workflows/{id}`, mutate nodes via `/v1/workflows/{id}/nodes`, and always pass the latest `workflowRevisionId` as `expectedRevisionId`. Use `/mailing-list` for list changes. Destructive ops support `dryRun` and `queuedContactPolicy: "discard"`.
+- **Event patterns for triggers**: List with `GET /v1/event-patterns`, then set `eventPatternId` or `eventName` on an `EventTrigger` node update.
 - **Email message previews**: Use `POST /v1/email-messages/{emailMessageId}/preview`. Variable fields depend on whether the parent is a campaign, workflow, or transactional email.
-- **Email message fallbacks**: `contactPropertiesFallbacks`, `eventPropertiesFallbacks`, and `dataVariablesFallbacks` fully replace the existing map on each update.
+- **Guardian checks**: Use `GET /v1/email-messages/{emailMessageId}/guardian` before publish to surface blocking errors and advisory warnings.
+- **Email message fallbacks**: `contactPropertiesFallbacks`, `eventPropertiesFallbacks`, and `dataVariablesFallbacks` merge per key (string sets, `null` deletes, omitted keys unchanged).
 - **Mailing list membership**: Pass `{ "list_id": true }` to subscribe and `{ "list_id": false }` to unsubscribe.
 - **Event name matching**: The `eventName` must match the configured Loops trigger exactly.
 - **Idempotency keys**: Use these any time an operation could be retried, such as webhook handlers or confirmation flows.
