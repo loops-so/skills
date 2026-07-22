@@ -88,12 +88,12 @@ POST /v1/contacts/create
   "subscribed": true,
   "userGroup": "premium",
   "userId": "usr_123",
-  "mailingLists": { "cm_abc123": true },
+  "mailingLists": { "cm06f5v0e45nf0ml5754o9cix": true },
   "customProperty": "value"
 }
 ```
 
-Returns `{ success: true, id: "contact_id" }`.
+Returns `{ success: true, id: "cct42l54f20i1la0lfooe3z12" }`.
 Returns `409` if `email` or `userId` already exists. Use `PUT /v1/contacts/update` instead.
 
 #### Update a contact
@@ -126,7 +126,7 @@ Only one parameter is allowed. Email must be URI-encoded.
     "subscribed": true,
     "userGroup": "premium",
     "userId": "usr_123",
-    "mailingLists": { "cm_abc123": true },
+    "mailingLists": { "cm06f5v0e45nf0ml5754o9cix": true },
     "optInStatus": "accepted"
   }
 ]
@@ -287,7 +287,7 @@ GET /v1/workflows?perPage=20&cursor=...
   },
   "data": [
     {
-      "id": "wf_abc123",
+      "id": "cwf42l54f20i1la0lfooe3z12",
       "name": "Onboarding drip",
       "createdAt": "2025-02-02T02:56:28.845Z",
       "updatedAt": "2025-02-10T14:30:00.000Z"
@@ -308,7 +308,7 @@ POST /v1/workflows
 {
   "name": "Onboarding drip",
   "description": "Welcome new signups",
-  "mailingListId": "cm_abc123"
+  "mailingListId": "cm06f5v0e45nf0ml5754o9cix"
 }
 ```
 
@@ -335,33 +335,33 @@ Use `GET /v1/workflows/{workflowId}/nodes/{nodeId}` for full node detail.
 
 ```jsonc
 {
-  "id": "wf_abc123",
-  "workflowRevisionId": "rev_abc123",
+  "id": "cwf42l54f20i1la0lfooe3z12",
+  "workflowRevisionId": "crv42l54f20i1la0lfooe3z99",
   "status": "Draft",
   "name": "Onboarding drip",
   "description": "Welcome new signups",
-  "mailingListId": "cm_abc123",
-  "rootNodeId": "node_trigger",
+  "mailingListId": "cm06f5v0e45nf0ml5754o9cix",
+  "rootNodeId": "cf16k73gq014h3mmj5b6jdi9r",
   "nodes": {
-    "node_trigger": {
+    "cf16k73gq014h3mmj5b6jdi9r": {
       "typeName": "EventTrigger",
-      "nextNodeIds": ["node_timer"],
+      "nextNodeIds": ["cf16k73gq014h3mmj5b4jdifg"],
       "eventName": "signup",
       "reEligible": false
     },
-    "node_timer": {
+    "cf16k73gq014h3mmj5b4jdifg": {
       "typeName": "TimerAction",
-      "nextNodeIds": ["node_email"],
+      "nextNodeIds": ["cf16k73gq014h3mmj5b4jdifh"],
       "amount": 1,
       "unit": "d"
     },
-    "node_email": {
+    "cf16k73gq014h3mmj5b4jdifh": {
       "typeName": "SendEmailAction",
-      "nextNodeIds": ["node_exit"],
-      "emailMessageId": "em_abc123",
+      "nextNodeIds": ["cf16k73gq014h3mmj5b4jdixi"],
+      "emailMessageId": "cem42l54f20i1la0lfooe3z12",
       "subject": "Welcome aboard"
     },
-    "node_exit": {
+    "cf16k73gq014h3mmj5b4jdixi": {
       "typeName": "ExitAction",
       "nextNodeIds": []
     }
@@ -381,7 +381,7 @@ Updates display properties only. At least one of `name` or `description` must be
 
 ```jsonc
 {
-  "expectedRevisionId": "rev_abc123",
+  "expectedRevisionId": "crv42l54f20i1la0lfooe3z99",
   "name": "Onboarding drip v2",
   "description": "Updated welcome sequence"
 }
@@ -397,8 +397,8 @@ POST /v1/workflows/{workflowId}/mailing-list
 
 ```jsonc
 {
-  "expectedRevisionId": "rev_abc123",
-  "mailingListId": "cm_newlist",
+  "expectedRevisionId": "crv42l54f20i1la0lfooe3z99",
+  "mailingListId": "cm16k73gq014h0mmj5b6jdi9r",
   "dryRun": true,
   "queuedContactPolicy": "fail"
 }
@@ -433,20 +433,20 @@ To add another branch under an existing branch/experiment node, use `/nodes/{nod
 
 ```jsonc
 {
-  "expectedRevisionId": "rev_abc123",
+  "expectedRevisionId": "crv42l54f20i1la0lfooe3z99",
   "insertMode": "between",
   "nodeTypeName": "TimerAction",
-  "fromNodeId": "node_trigger",
-  "toNodeId": "node_exit"
+  "fromNodeId": "cf16k73gq014h3mmj5b6jdi9r",
+  "toNodeId": "cf16k73gq014h3mmj5b4jdixi"
 }
 ```
 
 ```jsonc
 {
-  "expectedRevisionId": "rev_abc123",
+  "expectedRevisionId": "crv42l54f20i1la0lfooe3z99",
   "insertMode": "before",
   "nodeTypeName": "SendEmailAction",
-  "beforeNodeId": "node_exit"
+  "beforeNodeId": "cf16k73gq014h3mmj5b4jdixi"
 }
 ```
 
@@ -465,7 +465,7 @@ Adds one child under an existing `BranchNode` or `ExperimentBranchNode`:
 
 ```jsonc
 {
-  "expectedRevisionId": "rev_abc123"
+  "expectedRevisionId": "crv42l54f20i1la0lfooe3z99"
 }
 ```
 
@@ -511,7 +511,7 @@ Updates workflow-node-owned fields. Shared resources (email messages, audience s
 
 ```jsonc
 {
-  "expectedRevisionId": "rev_abc123",
+  "expectedRevisionId": "crv42l54f20i1la0lfooe3z99",
   "payload": {
     "typeName": "EventTrigger",
     "eventName": "signup",
@@ -543,7 +543,7 @@ DELETE /v1/workflows/{workflowId}/nodes/{nodeId}
 
 ```jsonc
 {
-  "expectedRevisionId": "rev_abc123",
+  "expectedRevisionId": "crv42l54f20i1la0lfooe3z99",
   "dryRun": true,
   "queuedContactPolicy": "fail"
 }
@@ -625,7 +625,7 @@ Events trigger email automations configured in Loops. The event name must match 
     "plan": "pro",
     "trialDays": 14
   },
-  "mailingLists": { "list_123": true },
+  "mailingLists": { "cm06f5v0e45nf0ml5754o9cix": true },
   "firstName": "Alex"
 }
 ```
@@ -688,7 +688,7 @@ Preferred endpoint. Returns a paginated list of transactional emails, most recen
     "returnedResults": 20,
     "perPage": 20,
     "totalPages": 3,
-    "nextCursor": "abc...",
+    "nextCursor": "clx42l54f20i1la0lfooe3z12",
     "nextPage": "https://..."
   },
   "data": [
@@ -696,8 +696,8 @@ Preferred endpoint. Returns a paginated list of transactional emails, most recen
       "id": "cll42l54f20i1la0lfooe3z12",
       "name": "Welcome email",
       "draftEmailMessageId": null,
-      "publishedEmailMessageId": "em_abc123",
-      "transactionalGroupId": "tg_abc123",
+      "publishedEmailMessageId": "cem42l54f20i1la0lfooe3z12",
+      "transactionalGroupId": "ctg42l54f20i1la0lfooe3z12",
       "createdAt": "2025-02-02T02:56:28.845Z",
       "updatedAt": "2025-02-02T03:10:00.000Z",
       "dataVariables": ["firstName", "trialEnd"]
@@ -766,7 +766,7 @@ POST /v1/transactional-emails/{transactionalId}
 ```jsonc
 {
   "name": "Renamed welcome email",
-  "transactionalGroupId": "tg_abc123"
+  "transactionalGroupId": "ctg42l54f20i1la0lfooe3z12"
 }
 ```
 
@@ -867,14 +867,14 @@ All three options can be used together. If a mailing list is applied, the segmen
       "action": "opened",
       "negate": false,
       "target": "campaign",
-      "id": "cmp_previous123"
+      "id": "ccm42l54f20i1la0lfooe3z12"
     },
     {
       "type": "activity",
       "action": "clicked",
       "negate": false,
       "target": "workflowEmail",
-      "id": "em_workflow123"
+      "id": "cem52l54f20i1la0lfooe3z12"
     }
   ]
 }
@@ -949,8 +949,8 @@ Only `name` is required. Creates a draft campaign and an empty email message in 
 ```jsonc
 {
   "name": "Spring product announcement",
-  "campaignGroupId": "cg_abc123",
-  "mailingListId": "cm_abc123",
+  "campaignGroupId": "ccg42l54f20i1la0lfooe3z12",
+  "mailingListId": "cm06f5v0e45nf0ml5754o9cix",
   "audienceSegmentId": null,
   "audienceFilter": null,
   "scheduling": {
@@ -982,9 +982,9 @@ Updates a draft campaign. At least one field is required. Returns `409` if the c
 ```jsonc
 {
   "name": "Renamed announcement",
-  "campaignGroupId": "cg_abc123",
-  "mailingListId": "cm_abc123",
-  "audienceSegmentId": "as_segment123",
+  "campaignGroupId": "ccg42l54f20i1la0lfooe3z12",
+  "mailingListId": "cm06f5v0e45nf0ml5754o9cix",
+  "audienceSegmentId": "cas42l54f20i1la0lfooe3z12",
   "scheduling": {
     "method": "schedule",
     "timestamp": "2026-06-22T14:00:00.000Z"
@@ -1014,7 +1014,7 @@ Updates draft email-message fields. All body fields are optional in the schema, 
 
 ```jsonc
 {
-  "expectedRevisionId": "rev_123",
+  "expectedRevisionId": "crv52l54f20i1la0lfooe3z12",
   "subject": "Big spring updates",
   "previewText": "A quick look at what's new",
   "fromName": "Loops",
@@ -1024,7 +1024,7 @@ Updates draft email-message fields. All body fields are optional in the schema, 
   "bccEmail": "archive@example.com",
   "languageCode": "en",
   "emailFormat": "styled",
-  "lmx": "<Style themeId=\"default\" />\n<Paragraph><Text>Hey there.</Text></Paragraph>\n<Component componentId=\"logo\" />",
+  "lmx": "<Style themeId=\"cth42l54f20i1la0lfooe3z12\" />\n<Paragraph><Text>Hey there.</Text></Paragraph>\n<Component componentId=\"ccp42l54f20i1la0lfooe3z12\" />",
   "contactPropertiesFallbacks": {
     "firstName": "there"
   },
@@ -1070,7 +1070,7 @@ Supplying a field the parent cannot reference returns `400`. Returns `429` when 
 }
 ```
 
-Returns `{ "id": "email_message_id" }` on success.
+Returns `{ "id": "cem42l54f20i1la0lfooe3z12" }` on success.
 
 ##### Run Guardian checks on an email message
 
@@ -1188,7 +1188,7 @@ await loops.createContact({
     firstName: "Alex",
     userGroup: "premium",
   },
-  mailingLists: { list_123: true },
+  mailingLists: { cm06f5v0e45nf0ml5754o9cix: true },
 });
 
 await loops.sendTransactionalEmail({
@@ -1303,7 +1303,7 @@ await fetch(
       subject: "Reset your password",
       fromName: "Loops",
       fromEmail: "hello",
-      lmx: '<Style themeId="default" />\n<Paragraph><Text>Click {data.resetLink} to reset.</Text></Paragraph>',
+      lmx: '<Style themeId="cth42l54f20i1la0lfooe3z12" />\n<Paragraph><Text>Click {data.resetLink} to reset.</Text></Paragraph>',
     }),
   }
 );
@@ -1426,7 +1426,7 @@ curl -X POST https://app.loops.so/api/v1/events/send \
 curl -X POST https://app.loops.so/api/v1/contacts/create \
   -H "Authorization: Bearer $LOOPS_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","firstName":"Alex","subscribed":true,"mailingLists":{"cm_abc123":true}}'
+  -d '{"email":"user@example.com","firstName":"Alex","subscribed":true,"mailingLists":{"cm06f5v0e45nf0ml5754o9cix":true}}'
 ```
 
 ---
@@ -1468,6 +1468,6 @@ Most v1 contact, event, and transactional request body string values are limited
 - **Email message previews**: Use `POST /v1/email-messages/{emailMessageId}/preview`. Variable fields depend on whether the parent is a campaign, workflow, or transactional email.
 - **Guardian checks**: Use `GET /v1/email-messages/{emailMessageId}/guardian` before publish to surface blocking errors and advisory warnings.
 - **Email message fallbacks**: `contactPropertiesFallbacks`, `eventPropertiesFallbacks`, and `dataVariablesFallbacks` merge per key (string sets, `null` deletes, omitted keys unchanged).
-- **Mailing list membership**: Pass `{ "list_id": true }` to subscribe and `{ "list_id": false }` to unsubscribe.
+- **Mailing list membership**: Pass `{ "cm06f5v0e45nf0ml5754o9cix": true }` to subscribe and `{ "cm06f5v0e45nf0ml5754o9cix": false }` to unsubscribe.
 - **Event name matching**: The `eventName` must match the configured Loops trigger exactly.
 - **Idempotency keys**: Use these any time an operation could be retried, such as webhook handlers or confirmation flows.
