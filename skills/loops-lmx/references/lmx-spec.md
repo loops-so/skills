@@ -397,18 +397,25 @@ All format tags plus `<Text>` accept optional `textColor`. It must be a 3- or 6-
 
 LMX variables use braced expressions with explicit namespaces.
 
-| Syntax | Kind | Common email types |
+| Syntax | Kind | Email types |
 | --- | --- | --- |
-| `{contact.firstName}` | Contact property / merge tag | Campaign email messages |
+| `{contact.firstName}` | Contact property / merge tag | Campaign and workflow email messages |
+| `{event.planName}` | Event property | Workflow email messages |
 | `{data.resetLink}` | Transactional data variable | Transactional email messages |
 
 Use explicit namespaces in LMX. The prefix tells Loops which data source to resolve at send time.
+
+Email-type rules:
+
+- **Campaigns** support `{contact.*}` only.
+- **Workflow emails** support `{contact.*}` and `{event.*}`.
+- **Transactional emails** support `{data.*}` only.
 
 Variables can be used in LMX email bodies, and also in email sending settings (subject, preview, from name, from email, reply to), both in the Loops editor and when updating email messages with the API.
 
 ### Contact properties (`{contact.X}`)
 
-Use `{contact.apiName}` for campaign personalization, for example `{contact.firstName}`.
+Use `{contact.apiName}` for campaign and workflow personalization, for example `{contact.firstName}`.
 
 Default contact properties currently include:
 
@@ -418,6 +425,31 @@ subscribed, createdAt
 ```
 
 Custom contact properties are referenced by API name, for example `{contact.companyName}`.
+
+### Event properties (`{event.X}`)
+
+Use `{event.propertyName}` in workflow email LMX when the value comes from the triggering event. The name after `event.` must match a property on the event that triggered the workflow.
+
+```xml
+<H1>Welcome to {event.planName}</H1>
+<Paragraph>Hi {contact.firstName}, your {event.planName} plan is ready.</Paragraph>
+```
+
+```json
+{
+  "email": "user@example.com",
+  "eventName": "signup",
+  "eventProperties": {
+    "planName": "Pro"
+  }
+}
+```
+
+Event-property rules:
+
+- Names are case-sensitive.
+- Event properties are scoped to the triggering event; they do not update the contact record.
+- Provide `eventPropertiesFallbacks` on the email message when a property may be missing.
 
 ### Transactional data variables (`{data.X}`)
 
@@ -453,7 +485,7 @@ Do not use editor or MJML transactional syntax in LMX:
 - `{resetLink}` (unprefixed) is invalid in LMX; use `{data.resetLink}`.
 - `{DATA_VARIABLE:resetLink}` is valid in MJML and the Loops editor, but not in LMX.
 
-Use `{data.X}` for transactional emails and `{contact.X}` for campaigns. Do not mix campaign contact-property syntax into transactional LMX when the value comes from the send payload.
+Use the namespace that matches the email type: `{contact.X}` for campaigns and workflow emails, `{event.X}` for workflow emails when the value comes from the triggering event, and `{data.X}` for transactional emails. Do not mix namespaces across email types.
 
 Variables are valid in:
 
@@ -470,19 +502,19 @@ Variables are not valid:
 - at the top level
 - inside `<CodeBlock>` (braces are literal)
 - inside unsupported attributes such as `<Image src="{contact.avatarUrl}" />`
-- unprefixed in validated LMX (`{firstName}` should be `{contact.firstName}`)
+- unprefixed in validated LMX (`{firstName}` should be `{contact.firstName}`, `{event.firstName}`, or `{data.firstName}` depending on email type)
 
 ### Fallback Values
 
 LMX does not have inline fallback syntax. Do not invent forms such as `{contact.firstName|there}`, `{contact.firstName:there}`, `{contact.firstName ?? "there"}`, or attributes like `fallback="there"`.
 
-Fallbacks for contact properties are editor/email-message metadata outside the LMX string. The LMX import/export path serializes only the variable reference itself:
+Fallbacks for contact and event properties are editor/email-message metadata outside the LMX string. The LMX import/export path serializes only the variable reference itself:
 
 ```xml
 <Paragraph>Hi {contact.firstName}</Paragraph>
 ```
 
-If a user asks for fallback behavior in LMX output, mention that the LMX markup can reference the variable, but fallback values must be configured through the Loops editor or metadata path that owns the email message fallbacks. For transactional emails, mark a data variable as optional in the editor instead of inventing inline fallback syntax.
+If a user asks for fallback behavior in LMX output, mention that the LMX markup can reference the variable, but fallback values must be configured through the Loops editor or metadata path that owns the email message fallbacks (`contactPropertiesFallbacks` for campaigns and workflow emails, `eventPropertiesFallbacks` for workflow emails). For transactional emails, mark a data variable as optional in the editor instead of inventing inline fallback syntax.
 
 ---
 
@@ -500,7 +532,10 @@ If a user asks for fallback behavior in LMX output, mention that the LMX markup 
 | Plain text at top level | Wrap in `<Paragraph>...</Paragraph>` |
 | `<Strong>` at top level | Wrap in a block such as `<Paragraph>` |
 | `<Button><Strong>Click</Strong></Button>` | Button text cannot contain inline tags |
-| `{firstName}` in LMX | Use `{contact.firstName}` for campaigns or `{data.firstName}` for transactional emails |
+| `{firstName}` in LMX | Use `{contact.firstName}` for campaigns and workflow emails, `{event.firstName}` only when the value comes from the triggering event, or `{data.firstName}` for transactional emails |
+| `{event.planName}` in a campaign or transactional email | Event properties are valid only in workflow email LMX |
+| `{contact.firstName}` in transactional LMX | Transactional emails support `{data.*}` only |
+| `{data.resetLink}` in a campaign or workflow email | Data variables are valid only in transactional email LMX |
 | `{DATA_VARIABLE:resetLink}` in LMX | Use `{data.resetLink}`; `DATA_VARIABLE:` is MJML/editor syntax, not LMX |
 | `{resetLink}` in transactional LMX | Use `{data.resetLink}` |
 | `{contact.firstName|there}` or similar fallback syntax | No inline fallback syntax exists in LMX; configure fallbacks outside the LMX string |
@@ -549,6 +584,17 @@ If a user asks for fallback behavior in LMX output, mention that the LMX markup 
   <Icon name="twitter" href="https://x.com/loops" />
   <Icon name="linkedin" href="https://www.linkedin.com/company/loops" />
 </Icons>
+```
+
+### Workflow example
+
+```xml
+<Style themeId="st_123" bodyColor="#ffffff" backgroundColor="#f3f4f6" bodyYPadding="24" textBaseColor="#111827" />
+<H1>Welcome to {event.planName}</H1>
+<Paragraph fontSize="16" lineHeight="150">
+  Hi {contact.firstName}, thanks for signing up for the {event.planName} plan.
+</Paragraph>
+<Button href="https://app.example.com/onboarding" align="center" bgColor="#000000" textColor="#ffffff" borderRadius="12">Get started</Button>
 ```
 
 ### Transactional example

@@ -22,10 +22,10 @@
 
 - Personalize only with data that is reliable and useful.
 - In Loops:
-  - campaigns use contact properties
-  - loops use contact and event properties
-  - transactional emails use data variables
-- Always provide fallbacks for contact or event-based personalization in campaigns and loops. Loops warns that missing values can prevent the email from sending.
+  - campaigns use contact properties (`{contact.*}`)
+  - workflow/lifecycle emails use contact properties (`{contact.*}`) and event properties (`{event.*}`)
+  - transactional emails use data variables (`{data.*}`)
+- Always provide fallbacks for contact properties in campaigns and for contact and event properties in workflow emails. Loops warns that missing values can prevent the email from sending.
 - Use personalization to add context, not to simulate familiarity where none exists.
 
 ## Layout And Design
