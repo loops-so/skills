@@ -18,6 +18,7 @@
     "contacts",
     "events",
     "lmx",
+    "migration",
     "deliverability"
   ]
 }
