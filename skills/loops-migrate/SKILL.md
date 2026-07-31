@@ -5,16 +5,16 @@ description: >
   provider, SMTP delivery stack, code-based template renderer, hosted marketing
   platform, or lifecycle automation tool to Loops. Use when the user asks to
   migrate or move a codebase to Loops, replace an email provider with Loops,
-  assess migration readiness, produce a Loops migration report card, convert
-  existing templates to LMX, or move existing sends, contacts, events,
-  campaigns, and lifecycle automation into Loops. Produce a read-only baseline
-  proposal before changing anything, ask for explicit approval to perform the
-  migration, execute approved work on an isolated branch, and finish with a
-  verified report card and production follow-ups. Do not use for a single
-  net-new Loops API call or a standalone new email; use the Loops API or LMX
-  skill instead.
+  assess migration readiness, produce a Loops migration report card, convert a
+  repository's existing templates to LMX as part of a migration, or move
+  existing sends, contacts, events, campaigns, and lifecycle automation into
+  Loops. Produce a read-only baseline proposal before changing anything, ask
+  for explicit approval to perform the migration, execute approved work on an
+  isolated branch, and finish with a verified report card and production
+  follow-ups. Do not use for a single net-new Loops API call or a standalone
+  new or converted email; use the Loops API or LMX skill instead.
 metadata:
-  version: 0.6.0
+  version: 0.6.1
 ---
 
 # Loops Migration

@@ -369,7 +369,7 @@ The proposal contains:
 - `Clean up`: send calls, adapters, estimated or verified source lines, dead code, and package impact
 - `Cost`: complete source-stack spend, including separate marketing and transactional plans when used; public Loops list price; monthly, annual, and percentage difference; and a confidence label that distinguishes verified or usage-backed expectations from an illustrative scenario
 - `Defaults`: sender, mailing-list, and presentation decisions in one or two lines
-- `If approved`: the implementation boundary in one or two lines
+- `If approved`: two plain-language sentences covering what the migration will change and what remains out of scope
 - one direct migration CTA
 - `Unsupported`: only when a genuine product or API gap exists
 
@@ -380,6 +380,8 @@ Count only top-level Loops resources in the headline. A timer, filter, branch, e
 Use proposal tense consistently: `to create`, `to replace`, `to remove`, and `to add`. Never describe proposed work as already created, replaced, removed, or added.
 
 Count unique dependency package names in the headline. Keep per-workspace dependency declarations in the private manifest so duplicate declarations do not inflate the user-facing package count.
+
+Write `If approved` as prose, never as a list, grid, or `To do` / `To preserve` / `Excluded` taxonomy. The first sentence states the implementation scope: create an isolated migration branch, update the application to use Loops, and either create the required draft resources or, for self-hosted projects, add a setup script so each deployment can create its own draft resources. The second sentence states that publishing, activation, live sends, DNS changes, and current-provider shutdown remain out of scope. Keep behavior-preservation details in the internal manifest or drill-down unless the user asks for them.
 
 ### Internal supporting detail
 
@@ -412,6 +414,63 @@ Keep API and schema versions in the private manifest. Do not display them in the
 
 Assemble the proposal once from the retained manifest. Validate only these presentation invariants before returning it: 10–20 lines and at most 250 words; active flows reconcile to primary destinations; no workflow node is counted as a top-level resource; pricing wording matches its confidence; source names and private commercial terms are absent; and the CTA is exact. Do not reopen the repository or redo pricing during report validation.
 
+### Presentation
+
+First assemble and validate the canonical report from the retained manifest. Presentation must not change its facts, calculations, approval boundary, or completion status.
+
+When running in Codex and the `visualize` skill is available, load and follow that skill to present the proposal or final report as a compact inline visualization.
+
+When running in Claude, keep the report inline and choose the available native surface:
+
+- In Claude web, desktop, or Cowork when custom visuals are available, present the canonical report as one compact inline report-card visual.
+- In Claude Code, present the canonical report as a compact Markdown dashboard using the template below. Do not require or change the user's global output style.
+
+Do not generate an HTML report, open a separate browser view, or add a visualization artifact to the target repository. Use Mermaid only when the user separately asks for a process diagram; exact report-card values belong in the Markdown tables.
+
+For the proposal, show:
+
+- audit revision and proposal status
+- up to three headline metrics
+- migration-resource composition
+- cleanup counts and estimated code removal
+- cost comparison, assumptions, and confidence wording
+- selected defaults and implementation boundary
+
+Place the exact migration CTA in Markdown immediately after the visualization:
+
+`Say migrate to move forward with the migration. No existing sending will be impacted until you merge the PR.`
+
+Do not show migration activity or a completed status in the proposal.
+
+For the final report, use the same structure with verified values. Show `Migration complete` only after every completion requirement passes. Replace the proposal CTA with no more than three grouped remaining actions.
+
+When inline visualization is unavailable, use the text proposal or final-report template below. Keep both presentations to one screen and at most 250 words.
+
+#### Claude Code Markdown dashboard
+
+Use this layout for a proposal, replacing every example value from the retained manifest:
+
+```markdown
+### Project · Loops migration proposal
+`Proposal` · audited `<commit>` · **8 email flows**
+
+| Move to Loops | Clean up | Estimated removal |
+| --- | --- | --- |
+| **6** transactionals<br>**2** workflows<br>**0** campaigns | **10** send calls<br>**1** adapter<br>**6** packages | **~767** source lines<br>**71** dead-code lines |
+
+| Shared resources | Defaults |
+| --- | --- |
+| 1 mailing list · 1 theme · 3 components · 1 asset | example.com · no-reply for system · alex for lifecycle |
+
+**Illustrative estimate** · assumes 10k marketing contacts + 100k transactionals/mo
+
+Current stack ≈$<total>/mo · Loops $<loops>/mo · potential savings ≈$<monthly>/mo / $<annual>/year (≈<percent>%). Actuals vary by usage and plan.
+
+**If approved.** Create an isolated migration branch, update the application to use Loops, and create the required draft Loops resources. Publishing, activation, live sends, DNS changes, and current-provider shutdown remain out of scope.
+```
+
+For a final report, change the status to `Migration complete`, replace proposed and estimated values with verified results, and replace `If approved` with no more than three grouped `Remaining` actions. Keep the exact proposal CTA outside the dashboard so it remains selectable and unambiguous.
+
 ### Proposal template
 
 ```text
@@ -430,9 +489,10 @@ Potential savings ≈$<monthly>/mo · $<annual>/year (≈<percent>%); actuals va
 Defaults: example.com · no-reply for system · alex for lifecycle
 Marketing: Product updates mailing list
 
-If approved: Create a migration branch, update the application,
-and create draft Loops resources. No publishing, activation,
-live sends, DNS changes, or provider shutdown.
+If approved: Create an isolated migration branch, update the application to
+use Loops, and create the required draft Loops resources. Publishing,
+activation, live sends, DNS changes, and current-provider shutdown remain
+out of scope.
 
 Say migrate to move forward with the migration. No existing sending
 will be impacted until you merge the PR.
