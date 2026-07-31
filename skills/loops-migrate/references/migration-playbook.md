@@ -420,12 +420,12 @@ First assemble and validate the canonical report from the retained manifest. Pre
 
 When running in Codex and the `visualize` skill is available, load and follow that skill to present the proposal or final report as a compact inline visualization.
 
-When running in Claude, keep the report inline and choose the available native surface:
+When running in Claude, present the report on the available native surface:
 
 - In Claude web, desktop, or Cowork when custom visuals are available, present the canonical report as one compact inline report-card visual.
-- In Claude Code, present the canonical report as a compact Markdown dashboard using the template below. Do not require or change the user's global output style.
+- In Claude Code, load the `artifact-design` skill, write the canonical report to a scratchpad HTML file, and publish it with the Artifact tool. If the Artifact tool is unavailable, present the canonical report as a compact Markdown dashboard using the template below. Do not require or change the user's global output style.
 
-Do not generate an HTML report, open a separate browser view, or add a visualization artifact to the target repository. Use Mermaid only when the user separately asks for a process diagram; exact report-card values belong in the Markdown tables.
+Do not write a report file into the target repository or open a separate browser view. Use Mermaid only when the user separately asks for a process diagram; exact report-card values belong in the Markdown tables.
 
 For the proposal, show:
 

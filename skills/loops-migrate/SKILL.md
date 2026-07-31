@@ -14,7 +14,7 @@ description: >
   follow-ups. Do not use for a single net-new Loops API call or a standalone
   new or converted email; use the Loops API or LMX skill instead.
 metadata:
-  version: 0.6.1
+  version: 0.6.2
 ---
 
 # Loops Migration
