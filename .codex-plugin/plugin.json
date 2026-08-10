@@ -21,6 +21,13 @@
     "deliverability"
   ],
   "skills": "./skills/",
+  "mcpServers": {
+    "loops": {
+      "type": "http",
+      "url": "https://mcp.loops.so/"
+    }
+  },
+  "apps": "./.app.json",
   "interface": {
     "displayName": "Loops",
     "shortDescription": "Email platform for SaaS.",
