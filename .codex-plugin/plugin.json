@@ -34,6 +34,10 @@
     "longDescription": "Use skills for integrating Loops in your codebase with API, CLI, LMX email markup, and deliverability.",
     "developerName": "Loops",
     "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
     "websiteURL": "https://loops.so",
     "privacyPolicyURL": "https://loops.so/privacy",
     "termsOfServiceURL": "https://loops.so/terms",
