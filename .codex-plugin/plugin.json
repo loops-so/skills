@@ -35,6 +35,8 @@
     "developerName": "Loops",
     "category": "Productivity",
     "websiteURL": "https://loops.so",
+    "privacyPolicyURL": "https://loops.so/privacy",
+    "termsOfServiceURL": "https://loops.so/terms",
     "brandColor": "#FC5200",
     "logo": "./assets/logo.svg",
     "defaultPrompt": [
