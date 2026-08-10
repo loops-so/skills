@@ -10,6 +10,12 @@
   "repository": "https://github.com/loops-so/skills",
   "license": "MIT",
   "skills": "./skills/",
+  "mcpServers": {
+    "loops": {
+      "type": "http",
+      "url": "https://mcp.loops.so/"
+    }
+  },
   "keywords": [
     "loops",
     "email",
