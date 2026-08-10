@@ -4,17 +4,11 @@
     "name": "Loops",
     "email": "support@loops.so"
   },
-  "interface": {
-    "displayName": "Loops"
-  },
+  "description": "Work with Loops without leaving Claude. Manage contacts and mailing lists, send transactional emails, work with events, and access everything else available through the Loops API. Just tell Claude what you want to do.",
   "plugins": [
     {
       "name": "loops",
       "source": "./",
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
       "category": "Productivity"
     }
   ]
