@@ -7,4 +7,4 @@ if ! command -v npx >/dev/null 2>&1; then
   exit 1
 fi
 
-npx skills add --all --global --yes https://github.com/Loops-so/skills
+npx skills add --all --global --yes https://github.com/loops-so/skills
