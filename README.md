@@ -30,7 +30,7 @@ npx skills add loops-so/skills --global --skill loops-email-sending-best-practic
 
 Project-level installs are also supported. Omit `--global` if you want the skills scoped to the current repository instead of user-level.
 
-### Pin A Release
+### Pin a release
 
 This repo is versioned with GitHub Releases. For stable installs, pin a release tag instead of installing from the default branch:
 
@@ -38,7 +38,7 @@ This repo is versioned with GitHub Releases. For stable installs, pin a release 
 npx skills add loops-so/skills#v1.0.0 --global
 ```
 
-### Upgrading From Unprefixed Skill Names
+### Upgrading from unprefixed skill names
 
 Older installs used the unprefixed skill names `api`, `cli`, `email-sending-best-practices`, and `lmx`. Installing the renamed `loops-*` skills does not automatically remove those old local skills. After installing the prefixed skills, remove the old names:
 
@@ -46,58 +46,28 @@ Older installs used the unprefixed skill names `api`, `cli`, `email-sending-best
 npx skills remove api cli email-sending-best-practices lmx --global
 ```
 
-## Plugin
+## Install plugin
 
 This repo can also be installed as a Plugin in certain agent environments.
 
-### Claude Code
+### ChatGPT / Codex
 
-With Claude CLI:
+Install the plugin from the [ChatGPT Plugin directory](https://chatgpt.com/plugins/plugin_asdk_app_6a76060a3cbc81919eaaca7e37e830fe).
 
-```bash
-claude plugin marketplace add loops-so/skills
-claude plugin install loops@loops-plugins
-```
+### Claude
 
-Inside Claude CLI:
-
-```bash
-/plugin marketplace add loops-so/skills
-/plugin install loops@loops-plugins
-```
-
-In Claude Code (desktop or web):
-
-1. Go to Customize
-1. Hit the `+` button to add a personal plugin. 
-1. Select **Create plugin** and then **Add marketplace**. Select **Add from repository**.
-1. Input `loops-so/skills` and hit **Sync**.
-1. When the UI refreshes, install the Loops plugin with the `+` button.
+Install the plugin from the [Claude Plugin directory](https://claude.ai/directory/loops).
 
 ### Cursor
 
 In the Cursor desktop app:
 
-1. Go to Settings > Plugins
-1. Paste in this repository URL (`https://github.com/Loops-so/skills`) where it says "Search or Paste Link".
-1. Click the Loops plugin that appears, then **Add to Cursor**. Confirm with **Add Plugin**.
+1. Go to Settings > Customize (or if in the Agents Window, click Customize in the left sidebar).
+1. Click **Browse Marketplace** and then the **All** option in the search bar. **Skills**.
+1. Select **Add Marketplace** and **Import from GitHub**. Paste in `https://github.com/loops-so/skills` and click **Import**.
+1. Once the Loops listing appears, click **Add**.
 
-### Codex
-
-Install with the CLI:
-
-```bash
-codex plugin marketplace add loops-so/skills
-codex plugin add loops@loops-plugins
-```
-
-Or install via `codex-marketplace`:
-
-```bash
-npx codex-marketplace add loops-so/skills --plugin
-```
-
-### How to invoke plugin skills
+## How to invoke skills
 
 | Platform        | Typical invocation                                                                                       |
 | --------------- | -------------------------------------------------------------------------------------------------------- |
@@ -105,7 +75,7 @@ npx codex-marketplace add loops-so/skills --plugin
 | **Cursor**      | `/loops-api`, `/loops-cli`, `/loops-lmx`, `/loops-email-sending-best-practices` in Agent chat (type `/`) |
 | **Codex**       | Describe the task, or `@loops` / `@` and choose a skill                                                  |
 
-## Verify Install
+## Verify install
 
 After installation, try a task that should trigger one of the skills:
 
@@ -116,7 +86,7 @@ After installation, try a task that should trigger one of the skills:
 - "Write an LMX onboarding email template."
 - "Audit this onboarding email flow for deliverability issues."
 
-## What's Included
+## What's included
 
 This repo currently ships:
 
@@ -128,7 +98,7 @@ This repo does not currently ship:
 - slash commands
 - MCP servers
 
-## Available Skills
+## Available skills
 
 ### `loops-api`
 
@@ -209,14 +179,14 @@ Example prompts:
 
 Skill file: [skills/loops-lmx/SKILL.md](./skills/loops-lmx/SKILL.md)
 
-## Stability Notes
+## Stability notes
 
 - This repo is maintained by Loops.
 - The Loops CLI has its own skill in this repo.
 - The Loops CLI itself is still pre-release and may change faster than the API and SDK docs.
 - The LMX skill tracks documented LMX behavior in the Loops editor and campaign editing API endpoints.
 
-## Versioning And Releases
+## Versioning and releases
 
 Loops skills are versioned as a single repo-level bundle with GitHub Releases and semver-style tags such as `v1.0.0`.
 
@@ -226,7 +196,7 @@ Loops skills are versioned as a single repo-level bundle with GitHub Releases an
 
 Use the GitHub release notes as the changelog for user-facing upgrade guidance.
 
-## Source Of Truth
+## Source of truth
 
 This repo is the installable Loops entry point for agent skills. When product behavior changes faster than this repo, verify against the official Loops resources:
 
@@ -247,7 +217,7 @@ When updating a skill:
 - verify product-specific details against official Loops sources
 - re-run `npx skills add . --list` before merging
 
-## Local Validation
+## Local validation
 
 ```bash
 git clone https://github.com/loops-so/skills.git
@@ -255,7 +225,7 @@ cd skills
 npx skills add . --list
 ```
 
-## Repository Structure
+## Repository structure
 
 ```text
 skills/
