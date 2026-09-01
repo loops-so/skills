@@ -21,6 +21,7 @@
 - https://loops.so/docs/sdks/nuxt
 - https://loops.so/docs/sdks/php
 - https://loops.so/docs/sdks/ruby
+- https://loops.so/docs/webhooks
 - https://app.loops.so/openapi.json
 
 ## Authentication
@@ -256,14 +257,14 @@ Destructive changes (delete nodes, change mailing list) can discard contacts que
 - Retry with `queuedContactPolicy: "discard"` to apply the change and discard those contacts.
 - Use `dryRun: true` to preview impact without mutating.
 
-Public workflows are limited to **300 nodes**. Generated children count toward that limit.
+Public workflows are limited to **400 nodes**. Generated children count toward that limit.
 
 #### Typical workflow build sequence
 
 1. `POST /v1/workflows` with a name — creates a draft with a blank trigger and exit node; save `id` and `workflowRevisionId`.
 2. Optionally set `mailingListId` via `POST /v1/workflows/{workflowId}/mailing-list`.
 3. Configure the trigger with `POST /v1/workflows/{workflowId}/nodes/{nodeId}` (for event triggers, use `GET /v1/event-patterns` first).
-4. Insert nodes with `POST /v1/workflows/{workflowId}/nodes` (`insertMode: "between"` or `"before"`), then update each node's config.
+4. Insert nodes with `POST /v1/workflows/{workflowId}/nodes` (`insertMode: "between"`, `"before"`, or `"after"`), then update each node's config.
 5. For `SendEmailAction` nodes, edit email content via `POST /v1/email-messages/{emailMessageId}` using the returned `emailMessageId`.
 6. Always pass the latest `workflowRevisionId` as `expectedRevisionId` on the next mutation.
 
@@ -389,6 +390,29 @@ Updates display properties only. At least one of `name` or `description` must be
 
 Returns the updated `SimplifiedWorkflow`. Returns `409` if `expectedRevisionId` is stale.
 
+#### Delete a workflow
+
+```
+DELETE /v1/workflows/{workflowId}
+```
+
+```jsonc
+{
+  "expectedRevisionId": "crv42l54f20i1la0lfooe3z99"
+}
+```
+
+Successful deletion returns `204 No Content`. Deleted workflows are not returned by other endpoints (`GET` returns `404`).
+
+If the workflow is currently sending or has queued contacts, the API returns `409 Conflict` with a `message` instead of deleting. Retry with the same `expectedRevisionId` and `confirmDelete: true` to delete the workflow, stop sending, and cancel queued contacts.
+
+```jsonc
+{
+  "expectedRevisionId": "crv42l54f20i1la0lfooe3z99",
+  "confirmDelete": true
+}
+```
+
 #### Change workflow mailing list
 
 ```
@@ -420,7 +444,8 @@ POST /v1/workflows/{workflowId}/nodes
 Creates a new default node and returns it with the latest workflow. Choose placement with `insertMode`:
 
 - `between` — place between an existing `fromNodeId` → `toNodeId` connection
-- `before` — place before `beforeNodeId` (target must have a parent and cannot be a trigger)
+- `before` — place before `toNodeId` (target must have a parent and cannot be a trigger). `VariantNode` cannot use `before`; restore a missing variant with `between` from the experiment branch. Deprecated `beforeNodeId` is still accepted; new callers should use `toNodeId`.
+- `after` — place after `fromNodeId` when that node has exactly one outgoing connection. Invalid when `fromNodeId` has no outgoing nodes, multiple outgoing nodes, or is an exit node. For multi-output nodes, use `between` with the exact `toNodeId`.
 
 Creatable `nodeTypeName` values: `AudienceFilter`, `BranchNode`, `ExperimentBranchNode`, `TimerAction`, `SendEmailAction`, `VariantNode`. Trigger nodes and `ExitAction` cannot be created via the API.
 
@@ -428,6 +453,8 @@ New nodes start with defaults; update them after creation. Branch creates also s
 
 - `BranchNode` creates two `AudienceFilter` children (adds 3 nodes total)
 - `ExperimentBranchNode` creates two regular `VariantNode` children plus one control `VariantNode` (adds 4 nodes total)
+
+A workflow cannot be started unless each direct `BranchNode` child is an `AudienceFilter`. For experiments, use create-node only to insert a missing `VariantNode` before non-variant content; use add-branch for another variant path. When `fromNodeId` is an `ExperimentBranchNode`, `nodeTypeName` must be `VariantNode` and `toNodeId` cannot already be a `VariantNode`.
 
 To add another branch under an existing branch/experiment node, use `/nodes/{nodeId}/add-branch` instead.
 
@@ -446,7 +473,16 @@ To add another branch under an existing branch/experiment node, use `/nodes/{nod
   "expectedRevisionId": "crv42l54f20i1la0lfooe3z99",
   "insertMode": "before",
   "nodeTypeName": "SendEmailAction",
-  "beforeNodeId": "cf16k73gq014h3mmj5b4jdixi"
+  "toNodeId": "cf16k73gq014h3mmj5b4jdixi"
+}
+```
+
+```jsonc
+{
+  "expectedRevisionId": "crv42l54f20i1la0lfooe3z99",
+  "insertMode": "after",
+  "nodeTypeName": "TimerAction",
+  "fromNodeId": "cf16k73gq014h3mmj5b6jdi9r"
 }
 ```
 
@@ -469,7 +505,26 @@ Adds one child under an existing `BranchNode` or `ExperimentBranchNode`:
 }
 ```
 
-Does not accept node configuration fields; update the child afterward. Adds 1 node toward the 300-node cap. Returns `{ "node": ..., "workflow": ... }`.
+Does not accept node configuration fields; update the child afterward. Adds 1 node toward the 400-node cap. Returns `{ "node": ..., "workflow": ... }`.
+
+#### Reroute a node connection
+
+```
+POST /v1/workflows/{workflowId}/nodes/{nodeId}/reroute
+```
+
+Moves the source node's only outgoing connection to another valid target. Send the source node in the URL path and the new target in the body.
+
+The source node must have exactly one outgoing connection. `BranchNode` and `ExperimentBranchNode` cannot be rerouted (they have multiple outputs). The current target must still have another incoming connection after the reroute. The workflow cannot be edited while in a `Sending` state.
+
+```jsonc
+{
+  "expectedRevisionId": "crv42l54f20i1la0lfooe3z99",
+  "newTargetNodeId": "cf16k73gq014h3mmj5b4jdifh"
+}
+```
+
+Returns the updated source node plus the latest workflow. Returns `400` for invalid connection selection, reroute target, or workflow state. Returns `409` if `expectedRevisionId` is stale.
 
 #### Get a workflow node
 
@@ -1086,11 +1141,13 @@ Use these endpoints when the LMX design guidance calls for Loops-native brand co
 
 1. `GET /v1/themes?perPage=20` to list available themes.
 2. `GET /v1/themes/{themeId}` to inspect theme colors, fonts, body/background treatment, and button defaults.
-3. `GET /v1/components?perPage=20` to list reusable components.
-4. `GET /v1/components/{componentId}` to inspect component LMX bodies.
-5. Reference selected assets with `<Style themeId="..." />` and `<Component componentId="..." />`.
-6. Use `/v1/uploads` when the selected implementation needs a new image asset.
-7. Update email-message content via `POST /v1/email-messages/{emailMessageId}` with the latest `expectedRevisionId`; save the returned `contentRevisionId` for the next update.
+3. Optionally `POST /v1/themes` or `POST /v1/themes/{themeId}` to create or update a theme (`styles` updates cascade; response includes `affectedEmailCount`).
+4. `GET /v1/components?perPage=20` to list reusable components.
+5. `GET /v1/components/{componentId}` to inspect component LMX bodies.
+6. Optionally `POST /v1/components` or `POST /v1/components/{componentId}` to create or update a component (`lmx` updates cascade; response includes `affectedEmailCount`).
+7. Reference selected assets with `<Style themeId="..." />` and `<Component componentId="..." />`.
+8. Use `/v1/uploads` when the selected implementation needs a new image asset.
+9. Update email-message content via `POST /v1/email-messages/{emailMessageId}` with the latest `expectedRevisionId`; save the returned `contentRevisionId` for the next update.
 
 #### Themes
 
@@ -1108,7 +1165,46 @@ Returns paginated themes (most recently created first). Use `themeId` in `<Style
 GET /v1/themes/{themeId}
 ```
 
-Returns theme metadata and style values (colors, fonts, button styles, etc.) for reference when building LMX.
+Returns `id`, `name`, `isDefault`, timestamps, and `styles` (colors, fonts, padding, button styles, heading styles). Style keys match LMX `<Style>` tag attributes.
+
+##### Create a theme
+
+```
+POST /v1/themes
+```
+
+```jsonc
+{
+  "name": "Dark mode",
+  "styles": {
+    "backgroundColor": "#111827",
+    "bodyColor": "#1f2937",
+    "textBaseColor": "#f9fafb",
+    "buttonBodyColor": "#2563eb"
+  }
+}
+```
+
+`name` is required. `styles` is optional. Returns the created theme including `id` and `isDefault`.
+
+##### Update a theme
+
+```
+POST /v1/themes/{themeId}
+```
+
+At least one of `name` or `styles` is required.
+
+```jsonc
+{
+  "name": "Dark mode v2",
+  "styles": {
+    "buttonBodyColor": "#1d4ed8"
+  }
+}
+```
+
+When `styles` change, the update cascades to every email using this theme. `affectedEmailCount` reports how many emails were affected (`0` when only the name changed). Per-email manual style overrides are preserved: the cascade only changes properties an email has not overridden. An override is removed only when it becomes identical to the theme's new value.
 
 #### Components
 
@@ -1126,7 +1222,41 @@ Returns paginated reusable components. Use `componentId` in `<Component componen
 GET /v1/components/{componentId}
 ```
 
-Returns `componentId`, `name`, and the component body as LMX.
+Returns `id`, `name`, and the component body as LMX.
+
+##### Create a component
+
+```
+POST /v1/components
+```
+
+```jsonc
+{
+  "name": "Header",
+  "lmx": "<Section><H1><Text>Welcome to Acme</Text></H1></Section>"
+}
+```
+
+`name` and `lmx` are required. Returns `id`, `name`, and `lmx`. Returns `422` for invalid LMX. Returns `413` if the LMX body exceeds the size limit.
+
+##### Update a component
+
+```
+POST /v1/components/{componentId}
+```
+
+At least one of `name` or `lmx` is required.
+
+```jsonc
+{
+  "name": "Header v2",
+  "lmx": "<Section><H1><Text>Hello from Acme</Text></H1></Section>"
+}
+```
+
+When the `lmx` body changes, the update cascades to every email using this component. `affectedEmailCount` reports how many were affected (`0` when only the name changed). A change that would introduce a dynamic variable an email using the component cannot use is rejected with `422`.
+
+For LMX markup rules, use the separate `loops-lmx` skill.
 
 #### Uploads
 
@@ -1158,12 +1288,114 @@ Returns `400` for invalid request bodies or unsupported `contentType` (response 
 ##### Complete an upload
 
 ```
-POST /v1/uploads/{id}/complete
+POST /v1/uploads/{emailAssetId}/complete
 ```
 
-Use the returned `emailAssetId` as `{id}` to finalize after the `PUT` upload succeeds. Success returns `emailAssetId` and `finalUrl`, which you can use in LMX `<Image src="..." />` attributes.
+Use the returned `emailAssetId` as `{emailAssetId}` to finalize after the `PUT` upload succeeds. Success returns `emailAssetId` and `finalUrl`, which you can use in LMX `<Image src="..." />` attributes.
 
 Returns `400` if the upload id is missing or the uploaded file has an unsupported content type. Returns `404` if the upload is not found.
+
+### Webhooks
+
+Loops POSTs events to your configured endpoint when contacts, email sends, and engagement change. Configure one URL in **Settings -> Webhooks**. Docs: https://loops.so/docs/webhooks
+
+These are inbound events Loops sends to you. They are not HTTP API endpoints you call. Return any **2xx** status to acknowledge delivery. Delivery is capped at **10 events per second**; excess events are queued. History is retained for 30 days.
+
+#### Verify signatures
+
+Every request includes:
+
+- `webhook-id` — unique delivery ID (use for idempotency)
+- `webhook-timestamp` — Unix seconds
+- `webhook-signature` — space-separated `v1,<base64>` signatures
+
+Verify HMAC-SHA256 of `{webhook-id}.{webhook-timestamp}.{rawBody}` using the signing secret from the dashboard. Strip a leading `whsec_` prefix and base64-decode the remainder as the key. Reject timestamps outside a 5-minute tolerance. After a secret rotation, the previous secret remains valid for 24 hours and both signatures may appear in the header.
+
+Read the raw request body as text before JSON-parsing. Do not verify against a re-serialized body.
+
+Send `testing.testEvent` from the dashboard to confirm the endpoint and verification.
+
+#### Shared payload fields
+
+Every event includes `eventName`, `eventTime` (Unix seconds), and `webhookSchemaVersion` (`"1.0.0"`). Most events also include `contactIdentity` (`id`, `email`, `userId`).
+
+Workflows were renamed from Loops on May 6, 2026. Webhook payloads still use `loop` names: `loop.email.sent`, `loopId`, `loopName`, and `sourceType: "loop"`.
+
+| Object | Fields |
+| --- | --- |
+| `contactIdentity` | `id`, `email`, `userId` |
+| `contact` | Same shape as find-contact, plus custom properties. Present on `contact.created`. |
+| `email` | `id`, `emailMessageId`, `subject` |
+| `mailingList` | `id`, `name`, `description`, `isPublic` |
+
+`email.*` events include `sourceType` (`campaign`, `loop`, or `transactional`) plus the matching `campaignId`, `loopId`, or `transactionalId`.
+
+#### Event types
+
+| `eventName` | Notes |
+| --- | --- |
+| `contact.created` | New contact. Includes full `contact`. With double opt-in, fires only after confirmation; `optInStatus` is never `"pending"` or `"rejected"`. |
+| `contact.unsubscribed` | Audience unsubscribe, or contact delete (alongside `contact.deleted`). Not a mailing-list unsubscribe. |
+| `contact.deleted` | Contact deleted. |
+| `contact.mailingList.subscribed` | Subscribed to a mailing list. With double opt-in, fires after confirmation. |
+| `contact.mailingList.unsubscribed` | Unsubscribed from a mailing list. |
+| `transactional.email.sent` | Transactional send. Includes `transactionalId`, `transactionalName`, `email`. |
+| `campaign.email.sent` | Campaign send (one event per recipient). Includes `campaignId`, `campaignName`, `email`, optional `mailingLists`. |
+| `loop.email.sent` | Workflow send (one event per recipient). Includes `loopId`, `loopName`, `email`, optional `mailingLists`. |
+| `email.delivered` | Delivered. |
+| `email.softBounced` | Temporary delivery failure; may still deliver after retries. |
+| `email.hardBounced` | Permanent failure; also sends `contact.unsubscribed`. |
+| `email.opened` | Opened. Campaign and workflow only (not transactional). |
+| `email.clicked` | Link clicked. Campaign and workflow only. |
+| `email.unsubscribed` | Unsubscribe link. Also sends `contact.unsubscribed` or `contact.mailingList.unsubscribed`. Campaign and workflow only. |
+| `email.resubscribed` | Resubscribed from the preference center. Campaign and workflow only. |
+| `email.spamReported` | Marked as spam. |
+| `testing.testEvent` | Dashboard test. Payload is `{ eventName, eventTime, message: "test", webhookSchemaVersion }`. |
+
+```json
+{
+  "eventName": "contact.created",
+  "eventTime": 1734425918,
+  "webhookSchemaVersion": "1.0.0",
+  "contactIdentity": {
+    "id": "cm4itta800003ow9hhekzk94o",
+    "email": "user@example.com",
+    "userId": null
+  },
+  "contact": {
+    "id": "cm4itta800003ow9hhekzk94o",
+    "email": "user@example.com",
+    "firstName": "Alex",
+    "lastName": "Chen",
+    "source": "API",
+    "subscribed": true,
+    "userGroup": "premium",
+    "userId": null,
+    "mailingLists": { "cm06f5v0e45nf0ml5754o9cix": true },
+    "optInStatus": "accepted"
+  }
+}
+```
+
+```json
+{
+  "eventName": "email.opened",
+  "eventTime": 1734425918,
+  "webhookSchemaVersion": "1.0.0",
+  "sourceType": "campaign",
+  "campaignId": "ccm42l54f20i1la0lfooe3z12",
+  "email": {
+    "id": "cem42l54f20i1la0lfooe3z12",
+    "emailMessageId": "cem52l54f20i1la0lfooe3z12",
+    "subject": "Big spring updates"
+  },
+  "contactIdentity": {
+    "id": "cm4ittmhq0011ow9h6fb460yw",
+    "email": "user@example.com",
+    "userId": null
+  }
+}
+```
 
 ---
 
@@ -1388,6 +1620,68 @@ export async function POST(req: Request) {
 
 This example uses the Next.js App Router. If you are using the Pages Router, use the corresponding `pages/api` handler shape and disable body parsing so Stripe signature verification still works.
 
+### Receive a Loops webhook
+
+```typescript
+// app/api/webhooks/loops/route.ts
+import crypto from "node:crypto";
+import { NextResponse } from "next/server";
+
+const SECRET_PREFIX = "whsec_";
+const TOLERANCE_SECONDS = 300;
+
+function verifyLoopsWebhook(headers: Headers, rawBody: string, secret: string) {
+  const id = headers.get("webhook-id");
+  const timestamp = headers.get("webhook-timestamp");
+  const signatureHeader = headers.get("webhook-signature");
+  if (!id || !timestamp || !signatureHeader) {
+    throw new Error("missing webhook headers");
+  }
+
+  const ts = Number(timestamp);
+  const now = Math.floor(Date.now() / 1000);
+  if (!Number.isFinite(ts) || Math.abs(now - ts) > TOLERANCE_SECONDS) {
+    throw new Error("invalid webhook timestamp");
+  }
+
+  const encoded = secret.startsWith(SECRET_PREFIX)
+    ? secret.slice(SECRET_PREFIX.length)
+    : secret;
+  const expected = crypto
+    .createHmac("sha256", Buffer.from(encoded, "base64"))
+    .update(`${id}.${timestamp}.${rawBody}`)
+    .digest("base64");
+
+  const matched = signatureHeader.split(/\s+/).some((entry) => {
+    const comma = entry.indexOf(",");
+    if (comma === -1) return false;
+    if (entry.slice(0, comma) !== "v1") return false;
+    const actual = Buffer.from(entry.slice(comma + 1));
+    const expectedBuf = Buffer.from(expected);
+    return (
+      actual.length === expectedBuf.length &&
+      crypto.timingSafeEqual(actual, expectedBuf)
+    );
+  });
+  if (!matched) throw new Error("invalid webhook signature");
+}
+
+export async function POST(req: Request) {
+  const rawBody = await req.text();
+  verifyLoopsWebhook(
+    req.headers,
+    rawBody,
+    process.env.LOOPS_SIGNING_SECRET!
+  );
+
+  const event = JSON.parse(rawBody);
+  // Handle event.eventName. Use webhook-id for idempotency.
+  return NextResponse.json({ ok: true, eventName: event.eventName });
+}
+```
+
+Return any 2xx status to acknowledge delivery. Read `rawBody` before parsing JSON.
+
 ### Python
 
 ```python
@@ -1438,9 +1732,9 @@ curl -X POST https://app.loops.so/api/v1/contacts/create \
 | 401 | Invalid API key, or workflow/content API not enabled | Check the key is correct and has not been revoked; confirm the workflow or content API is enabled for your team |
 | 400 | Bad request | Check required fields and value types |
 | 404 | Not found | Contact, transactional email, campaign, campaign group, transactional group, audience segment, workflow, workflow node, event pattern, theme, component, email message, or upload ID does not exist |
-| 409 | Conflict | Email or userId already exists, idempotency key was reused, campaign is not draft, transactional email has no draft to publish, email message uses MJML or content cannot be parsed, email/workflow `expectedRevisionId` is stale, or a reserved group name was used |
-| 413 | Payload too large | LMX body exceeds 100 KB, or upload `contentLength` exceeds 4 MB |
-| 422 | LMX failed to compile, or draft failed validation / unsafe content | Fix invalid LMX, missing required LMX attributes, XML escaping, or Guardian/publish validation issues |
+| 409 | Conflict | Email or userId already exists, idempotency key was reused, campaign is not draft, transactional email has no draft to publish, email message uses MJML or content cannot be parsed, email/workflow `expectedRevisionId` is stale, a reserved group name was used, or workflow delete needs `confirmDelete: true` because the workflow is sending or has queued contacts |
+| 413 | Payload too large | LMX body exceeds 100 KB (email messages) or the component LMX size limit, or upload `contentLength` exceeds 4 MB |
+| 422 | LMX failed to compile, draft failed validation / unsafe content, or a component body change would break emails using it | Fix invalid LMX, missing required LMX attributes, XML escaping, Guardian/publish validation issues, or incompatible component variables |
 | 429 | Rate limited, daily preview limit reached, or upload limit exceeded | Back off and retry |
 | 501 | Not implemented | Requested workflow node update is not supported |
 | CORS error | Client-side request | Move the API call to your server |
@@ -1458,13 +1752,15 @@ Most v1 contact, event, and transactional request body string values are limited
 - **Upload limits**: Max file size is 4 MB. Max 50 uploads per 24 hours per team.
 - **`fromEmail` on email messages**: Pass only the sender username, such as `"updates"`, not `"updates@example.com"`.
 - **Content revision IDs**: After `POST /v1/campaigns`, use `emailMessageContentRevisionId` as the first `expectedRevisionId`. After each `POST /v1/email-messages/{id}`, save `contentRevisionId` for the next update.
-- **Themes and components before LMX**: List and get themes/components so `<Style themeId="..." />` and `<Component componentId="..." />` reference real IDs.
+- **Themes and components before LMX**: List and get themes/components so `<Style themeId="..." />` and `<Component componentId="..." />` reference real IDs. Create or update with `POST /v1/themes` and `POST /v1/components`. Style and LMX body updates cascade to emails using that asset; responses include `affectedEmailCount`.
 - **Draft-only writes**: Campaign and email-message updates return `409` once a campaign leaves draft status.
 - **Campaign audience**: Target a `mailingListId`, `audienceSegmentId`, or inline `audienceFilter`. Setting `audienceSegmentId` clears `audienceFilter`.
 - **Campaign scheduling**: Use `scheduling.method` of `"now"` or `"schedule"`. `timestamp` is required and must be in the future when scheduling.
 - **Groups**: Campaign and transactional groups cannot be named `"Unsorted"`, and the Unsorted group cannot be edited. Omit `campaignGroupId` or `transactionalGroupId` on create to use the team's default group.
-- **Workflow mutations**: Create with `POST /v1/workflows`, inspect with `GET /v1/workflows/{id}`, mutate nodes via `/v1/workflows/{id}/nodes`, and always pass the latest `workflowRevisionId` as `expectedRevisionId`. Use `/mailing-list` for list changes. Destructive ops support `dryRun` and `queuedContactPolicy: "discard"`.
+- **Workflow mutations**: Create with `POST /v1/workflows`, inspect with `GET /v1/workflows/{id}`, mutate nodes via `/v1/workflows/{id}/nodes`, and always pass the latest `workflowRevisionId` as `expectedRevisionId`. Use `/mailing-list` for list changes. Destructive ops support `dryRun` and `queuedContactPolicy: "discard"`. Insert with `between`, `before`, or `after`. Reroute a single-output connection with `/nodes/{nodeId}/reroute`. Public workflows are capped at 400 nodes.
+- **Workflow delete**: `DELETE /v1/workflows/{id}` returns `204`. If the workflow is sending or has queued contacts, retry with `confirmDelete: true`.
 - **Event patterns for triggers**: List with `GET /v1/event-patterns`, then set `eventPatternId` or `eventName` on an `EventTrigger` node update.
+- **Inbound Loops webhooks**: Configure one endpoint in Settings → Webhooks. Verify `webhook-id` / `webhook-timestamp` / `webhook-signature` against the raw body. Return 2xx. Workflow events keep `loop` names (`loop.email.sent`, `sourceType: "loop"`).
 - **Email message previews**: Use `POST /v1/email-messages/{emailMessageId}/preview`. Variable fields depend on whether the parent is a campaign, workflow, or transactional email.
 - **Guardian checks**: Use `GET /v1/email-messages/{emailMessageId}/guardian` before publish to surface blocking errors and advisory warnings.
 - **Email message fallbacks**: `contactPropertiesFallbacks`, `eventPropertiesFallbacks`, and `dataVariablesFallbacks` merge per key (string sets, `null` deletes, omitted keys unchanged).
