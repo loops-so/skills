@@ -140,6 +140,8 @@ Use this skill when you need to:
 - send Loops events from backend code
 - send transactional emails with the API or SDKs
 - create draft campaigns and update email-message content
+- create and update themes and reusable email components
+- create, update, and delete workflows and workflow nodes
 - upload images for use in email LMX content
 - choose between official SDKs and raw HTTP requests
 - handle rate limits, idempotency keys, and server-side-only constraints
