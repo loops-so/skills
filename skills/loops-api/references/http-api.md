@@ -21,6 +21,7 @@
 - https://loops.so/docs/sdks/nuxt
 - https://loops.so/docs/sdks/php
 - https://loops.so/docs/sdks/ruby
+- https://loops.so/docs/webhooks
 - https://app.loops.so/openapi.json
 
 ## Authentication
@@ -1294,6 +1295,108 @@ Use the returned `emailAssetId` as `{emailAssetId}` to finalize after the `PUT` 
 
 Returns `400` if the upload id is missing or the uploaded file has an unsupported content type. Returns `404` if the upload is not found.
 
+### Webhooks
+
+Loops POSTs events to your configured endpoint when contacts, email sends, and engagement change. Configure one URL in **Settings -> Webhooks**. Docs: https://loops.so/docs/webhooks
+
+These are inbound events Loops sends to you. They are not HTTP API endpoints you call. Return any **2xx** status to acknowledge delivery. Delivery is capped at **10 events per second**; excess events are queued. History is retained for 30 days.
+
+#### Verify signatures
+
+Every request includes:
+
+- `webhook-id` — unique delivery ID (use for idempotency)
+- `webhook-timestamp` — Unix seconds
+- `webhook-signature` — space-separated `v1,<base64>` signatures
+
+Verify HMAC-SHA256 of `{webhook-id}.{webhook-timestamp}.{rawBody}` using the signing secret from the dashboard. Strip a leading `whsec_` prefix and base64-decode the remainder as the key. Reject timestamps outside a 5-minute tolerance. After a secret rotation, the previous secret remains valid for 24 hours and both signatures may appear in the header.
+
+Read the raw request body as text before JSON-parsing. Do not verify against a re-serialized body.
+
+Send `testing.testEvent` from the dashboard to confirm the endpoint and verification.
+
+#### Shared payload fields
+
+Every event includes `eventName`, `eventTime` (Unix seconds), and `webhookSchemaVersion` (`"1.0.0"`). Most events also include `contactIdentity` (`id`, `email`, `userId`).
+
+Workflows were renamed from Loops on May 6, 2026. Webhook payloads still use `loop` names: `loop.email.sent`, `loopId`, `loopName`, and `sourceType: "loop"`.
+
+| Object | Fields |
+| --- | --- |
+| `contactIdentity` | `id`, `email`, `userId` |
+| `contact` | Same shape as find-contact, plus custom properties. Present on `contact.created`. |
+| `email` | `id`, `emailMessageId`, `subject` |
+| `mailingList` | `id`, `name`, `description`, `isPublic` |
+
+`email.*` events include `sourceType` (`campaign`, `loop`, or `transactional`) plus the matching `campaignId`, `loopId`, or `transactionalId`.
+
+#### Event types
+
+| `eventName` | Notes |
+| --- | --- |
+| `contact.created` | New contact. Includes full `contact`. With double opt-in, fires only after confirmation; `optInStatus` is never `"pending"` or `"rejected"`. |
+| `contact.unsubscribed` | Audience unsubscribe, or contact delete (alongside `contact.deleted`). Not a mailing-list unsubscribe. |
+| `contact.deleted` | Contact deleted. |
+| `contact.mailingList.subscribed` | Subscribed to a mailing list. With double opt-in, fires after confirmation. |
+| `contact.mailingList.unsubscribed` | Unsubscribed from a mailing list. |
+| `transactional.email.sent` | Transactional send. Includes `transactionalId`, `transactionalName`, `email`. |
+| `campaign.email.sent` | Campaign send (one event per recipient). Includes `campaignId`, `campaignName`, `email`, optional `mailingLists`. |
+| `loop.email.sent` | Workflow send (one event per recipient). Includes `loopId`, `loopName`, `email`, optional `mailingLists`. |
+| `email.delivered` | Delivered. |
+| `email.softBounced` | Temporary delivery failure; may still deliver after retries. |
+| `email.hardBounced` | Permanent failure; also sends `contact.unsubscribed`. |
+| `email.opened` | Opened. Campaign and workflow only (not transactional). |
+| `email.clicked` | Link clicked. Campaign and workflow only. |
+| `email.unsubscribed` | Unsubscribe link. Also sends `contact.unsubscribed` or `contact.mailingList.unsubscribed`. Campaign and workflow only. |
+| `email.resubscribed` | Resubscribed from the preference center. Campaign and workflow only. |
+| `email.spamReported` | Marked as spam. |
+| `testing.testEvent` | Dashboard test. Payload is `{ eventName, eventTime, message: "test", webhookSchemaVersion }`. |
+
+```json
+{
+  "eventName": "contact.created",
+  "eventTime": 1734425918,
+  "webhookSchemaVersion": "1.0.0",
+  "contactIdentity": {
+    "id": "cm4itta800003ow9hhekzk94o",
+    "email": "user@example.com",
+    "userId": null
+  },
+  "contact": {
+    "id": "cm4itta800003ow9hhekzk94o",
+    "email": "user@example.com",
+    "firstName": "Alex",
+    "lastName": "Chen",
+    "source": "API",
+    "subscribed": true,
+    "userGroup": "premium",
+    "userId": null,
+    "mailingLists": { "cm06f5v0e45nf0ml5754o9cix": true },
+    "optInStatus": "accepted"
+  }
+}
+```
+
+```json
+{
+  "eventName": "email.opened",
+  "eventTime": 1734425918,
+  "webhookSchemaVersion": "1.0.0",
+  "sourceType": "campaign",
+  "campaignId": "ccm42l54f20i1la0lfooe3z12",
+  "email": {
+    "id": "cem42l54f20i1la0lfooe3z12",
+    "emailMessageId": "cem52l54f20i1la0lfooe3z12",
+    "subject": "Big spring updates"
+  },
+  "contactIdentity": {
+    "id": "cm4ittmhq0011ow9h6fb460yw",
+    "email": "user@example.com",
+    "userId": null
+  }
+}
+```
+
 ---
 
 ## Code Examples
@@ -1517,6 +1620,68 @@ export async function POST(req: Request) {
 
 This example uses the Next.js App Router. If you are using the Pages Router, use the corresponding `pages/api` handler shape and disable body parsing so Stripe signature verification still works.
 
+### Receive a Loops webhook
+
+```typescript
+// app/api/webhooks/loops/route.ts
+import crypto from "node:crypto";
+import { NextResponse } from "next/server";
+
+const SECRET_PREFIX = "whsec_";
+const TOLERANCE_SECONDS = 300;
+
+function verifyLoopsWebhook(headers: Headers, rawBody: string, secret: string) {
+  const id = headers.get("webhook-id");
+  const timestamp = headers.get("webhook-timestamp");
+  const signatureHeader = headers.get("webhook-signature");
+  if (!id || !timestamp || !signatureHeader) {
+    throw new Error("missing webhook headers");
+  }
+
+  const ts = Number(timestamp);
+  const now = Math.floor(Date.now() / 1000);
+  if (!Number.isFinite(ts) || Math.abs(now - ts) > TOLERANCE_SECONDS) {
+    throw new Error("invalid webhook timestamp");
+  }
+
+  const encoded = secret.startsWith(SECRET_PREFIX)
+    ? secret.slice(SECRET_PREFIX.length)
+    : secret;
+  const expected = crypto
+    .createHmac("sha256", Buffer.from(encoded, "base64"))
+    .update(`${id}.${timestamp}.${rawBody}`)
+    .digest("base64");
+
+  const matched = signatureHeader.split(/\s+/).some((entry) => {
+    const comma = entry.indexOf(",");
+    if (comma === -1) return false;
+    if (entry.slice(0, comma) !== "v1") return false;
+    const actual = Buffer.from(entry.slice(comma + 1));
+    const expectedBuf = Buffer.from(expected);
+    return (
+      actual.length === expectedBuf.length &&
+      crypto.timingSafeEqual(actual, expectedBuf)
+    );
+  });
+  if (!matched) throw new Error("invalid webhook signature");
+}
+
+export async function POST(req: Request) {
+  const rawBody = await req.text();
+  verifyLoopsWebhook(
+    req.headers,
+    rawBody,
+    process.env.LOOPS_SIGNING_SECRET!
+  );
+
+  const event = JSON.parse(rawBody);
+  // Handle event.eventName. Use webhook-id for idempotency.
+  return NextResponse.json({ ok: true, eventName: event.eventName });
+}
+```
+
+Return any 2xx status to acknowledge delivery. Read `rawBody` before parsing JSON.
+
 ### Python
 
 ```python
@@ -1595,6 +1760,7 @@ Most v1 contact, event, and transactional request body string values are limited
 - **Workflow mutations**: Create with `POST /v1/workflows`, inspect with `GET /v1/workflows/{id}`, mutate nodes via `/v1/workflows/{id}/nodes`, and always pass the latest `workflowRevisionId` as `expectedRevisionId`. Use `/mailing-list` for list changes. Destructive ops support `dryRun` and `queuedContactPolicy: "discard"`. Insert with `between`, `before`, or `after`. Reroute a single-output connection with `/nodes/{nodeId}/reroute`. Public workflows are capped at 400 nodes.
 - **Workflow delete**: `DELETE /v1/workflows/{id}` returns `204`. If the workflow is sending or has queued contacts, retry with `confirmDelete: true`.
 - **Event patterns for triggers**: List with `GET /v1/event-patterns`, then set `eventPatternId` or `eventName` on an `EventTrigger` node update.
+- **Inbound Loops webhooks**: Configure one endpoint in Settings → Webhooks. Verify `webhook-id` / `webhook-timestamp` / `webhook-signature` against the raw body. Return 2xx. Workflow events keep `loop` names (`loop.email.sent`, `sourceType: "loop"`).
 - **Email message previews**: Use `POST /v1/email-messages/{emailMessageId}/preview`. Variable fields depend on whether the parent is a campaign, workflow, or transactional email.
 - **Guardian checks**: Use `GET /v1/email-messages/{emailMessageId}/guardian` before publish to surface blocking errors and advisory warnings.
 - **Email message fallbacks**: `contactPropertiesFallbacks`, `eventPropertiesFallbacks`, and `dataVariablesFallbacks` merge per key (string sets, `null` deletes, omitted keys unchanged).

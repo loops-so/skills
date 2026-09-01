@@ -142,6 +142,7 @@ Use this skill when you need to:
 - create draft campaigns and update email-message content
 - create and update themes and reusable email components
 - create, update, and delete workflows and workflow nodes
+- receive and verify inbound Loops webhooks
 - upload images for use in email LMX content
 - choose between official SDKs and raw HTTP requests
 - handle rate limits, idempotency keys, and server-side-only constraints
@@ -151,6 +152,7 @@ Example prompts:
 - "Add this user to Loops after signup."
 - "Check whether this Loops API key is valid."
 - "Send this event from my Rails app."
+- "Verify Loops webhooks in my Next.js app."
 
 Skill file: [skills/loops-api/SKILL.md](./skills/loops-api/SKILL.md)
 
