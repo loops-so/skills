@@ -1,23 +1,17 @@
 ---
 name: loops-lmx
 description: >
-  Use this skill whenever LMX is used, produced, reviewed, migrated, or modified.
-  This includes composing campaigns, loops, lifecycle emails, or email-message
-  bodies for the Loops editor or Content API. LMX (Loops Markup Language) is
-  the format used for Loops email content. Trigger on phrases like "create a
-  campaign", "generate an email", "write a welcome email", "draft a lifecycle
-  email", "build an email template", "create an onboarding email", "copy this
-  into LMX", "migrate this email", "convert this email to LMX", "design a new
-  Loops email", "use imagegen for a Loops email", "use gpt-image for an LMX
-  reference", "visual reference for a Loops email", "LMX", "Loops email", or
-  any request to produce, copy, migrate, convert, review, or modify email body
-  content intended for Loops. For net-new emails or major visual redesigns,
-  follow this skill's Net-New Email Design Flow before generating or sourcing
-  new visual assets.
-  Source copy, existing HTML, MJML, Markdown, screenshots, and migration
-  instructions do not bypass this skill's rules unless the user explicitly
-  overrides a specific rule. Do not trigger for questions about the Loops HTTP
-  API, SDK integration, or CLI unless email body content is also involved.
+  Use whenever LMX is created, reviewed, migrated, or modified for the Loops
+  editor or Content API. Trigger for campaigns, lifecycle or workflow emails,
+  transactional email bodies, templates, onboarding or welcome emails, Loops
+  email design, LMX conversion, and requests to copy or migrate HTML, MJML,
+  Markdown, screenshots, or plain text into LMX. Also trigger when imagegen or
+  gpt-image is requested as a visual reference for a Loops email. For net-new
+  emails or major visual redesigns, follow this skill's Net-New Email Design
+  Flow and its known-brand/customer context gate before generating or sourcing
+  visual assets. Source material does not bypass the skill's rules unless the
+  user explicitly overrides a rule. Do not trigger for Loops HTTP API, SDK, or
+  CLI questions unless email body content is also involved.
 metadata:
   version: 1.1.15
 ---
