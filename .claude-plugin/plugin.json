@@ -9,6 +9,7 @@
   "homepage": "https://loops.so/agents",
   "repository": "https://github.com/loops-so/skills",
   "license": "MIT",
+  "privacyPolicyUrl": "https://loops.so/privacy",
   "skills": "./skills/",
   "mcpServers": {
     "loops": {
