@@ -40,27 +40,17 @@ Prefer the official CLI docs as the source of truth if installation behavior see
 brew install loops-so/tap/loops
 ```
 
-### Install script (macOS, Linux, Windows via WSL)
-
-```bash
-curl -fsSL https://install.loops.so/cli | sh
-```
-
-To install a specific version or to a custom path, append `-s -- <version> <path>` to `sh` in the command above. The default install path is `~/.local/bin`.
-
-If the user is working from source instead of using an installer, defer to the CLI repo README.
-
 ### Go install
 
 ```bash
 go install github.com/loops-so/cli/cmd/loops@latest
 ```
 
-## Install script (Windows PowerShell)
+### Install scripts
 
-```pwsh
-irm https://raw.githubusercontent.com/loops-so/cli/main/install.ps1 | iex
-```
+Loops also publishes install scripts for macOS, Linux, and Windows. Do not pipe a downloaded script straight into a shell, and do not run one on the user's behalf. Point the user to the install section of the CLI README (https://github.com/loops-so/cli) so they can review the script and run it themselves.
+
+If the user is working from source instead of using an installer, defer to the CLI repo README.
 
 ## Auth And Configuration
 
