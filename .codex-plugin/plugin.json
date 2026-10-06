@@ -62,7 +62,7 @@
     "brandColor": "#FC5200",
     "logo": "./assets/logo.svg",
     "defaultPrompt": [
-      "Add Loops to my Next.js app and send a signup event from the server.",
+      "Add Loops to my app and send a signup event from the server.",
       "Build a failed payment (dunning) email workflow in Loops.",
       "Design a new welcome email with an imagegen reference, then write it in LMX."
     ]
