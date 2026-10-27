@@ -211,6 +211,15 @@ Compare the selected visual reference, source component/theme, or screenshot aga
 
 If LMX cannot reproduce a reference detail, state which detail is unsupported, implement the closest email-safe equivalent, and verify that the result still preserves the reference's structure and visual hierarchy.
 
+### Getting A Rendered Preview
+
+Look at the email as Loops renders it. Do not treat valid LMX, a successful API response, or clean Guardian results as visual proof.
+
+1. Open the email in Loops in a browser you can see and screenshot, such as the editor page for the campaign, workflow, or transactional email that owns the email message. If the page asks the user to sign in, ask them to sign in; never enter credentials yourself.
+2. Check the rendered email at desktop width and, where the editor offers it, mobile width.
+3. When comparing several emails or variants, open each one in its own tab, or post the screenshots in the chat so the user can compare them side by side.
+4. If no browser is available or the user cannot sign in, send a preview to the user (`POST /v1/email-messages/{emailMessageId}/preview` or `loops email-messages preview`) and say that you have not seen the render yourself.
+
 ---
 
 ## Visual Contract Checklist
