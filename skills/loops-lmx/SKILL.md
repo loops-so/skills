@@ -19,7 +19,7 @@ description: >
   overrides a specific rule. Do not trigger for questions about the Loops HTTP
   API, SDK integration, or CLI unless email body content is also involved.
 metadata:
-  version: 1.1.15
+  version: 1.1.16
 ---
 
 # LMX Skill
@@ -63,6 +63,9 @@ When this skill is active:
 - Creating campaigns, posting LMX via the API, revision IDs, themes, components, or image uploads:
   Use the `loops-api` skill (HTTP) or `loops-cli` skill (terminal). This skill covers the LMX document itself.
 
+- Subject lines, preview text, sender identity, personalization fallbacks, or deliverability for campaign, lifecycle, or workflow emails:
+  Use the `loops-email-sending-best-practices` skill alongside this one.
+
 ## Net-New Email Design Flow
 
 Use this flow when creating a brand-new campaign, lifecycle, workflow, or transactional email, or when the user asks for a substantial visual redesign.
@@ -74,7 +77,8 @@ Use this flow when creating a brand-new campaign, lifecycle, workflow, or transa
 5. Inspect the selected reference before writing LMX. If the layout or text is visibly wrong, iterate once with a focused prompt rather than compensating from memory.
 6. Convert the selected reference or Loops-native structure into valid LMX while preserving the hierarchy. Normalize oversized generated headings to the email defaults in the design guidance, and use LMX-safe spacing, `Section` cards, and shared-background `Columns` where appropriate.
 7. Use variables for the right email type: `{contact.*}` for campaigns and workflow emails; `{event.*}` for workflow emails when the value comes from the triggering event; `{data.*}` only for transactional emails.
-8. If the email is implemented through the API, CLI, or editor, update through the revision-safe email-message path and compare a fresh rendered Loops editor preview against the visual reference or Loops-native source before calling the work done.
+8. If the email is implemented through the API, CLI, or editor, update through the revision-safe email-message path and compare a fresh rendered Loops editor preview against the visual reference or Loops-native source before calling the work done. See Getting A Rendered Preview in `references/lmx-design-guidelines.md`.
+9. Review the subject, preview text, sender, personalization fallbacks, and CTA with the `loops-email-sending-best-practices` skill before calling a campaign, lifecycle, or workflow email done.
 
 ## Output Checklist
 
