@@ -18,13 +18,14 @@
     "contacts",
     "events",
     "lmx",
+    "migration",
     "deliverability"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Loops",
     "shortDescription": "Email platform for SaaS.",
-    "longDescription": "Use skills for integrating Loops in your codebase with API, CLI, LMX email markup, and deliverability.",
+    "longDescription": "Use skills for integrating Loops in your codebase with API, CLI, LMX email markup, migration workflows, and deliverability.",
     "developerName": "Loops",
     "category": "Productivity",
     "websiteURL": "https://loops.so",
@@ -33,7 +34,8 @@
     "defaultPrompt": [
       "Add a contact to Loops from my backend.",
       "Send a transactional email with the Loops API.",
-      "Design a new welcome email with an imagegen reference, then write it in LMX."
+      "Design a new welcome email with an imagegen reference, then write it in LMX.",
+      "Audit this repository and migrate its email stack to Loops."
     ]
   }
 }

@@ -26,6 +26,7 @@ npx skills add loops-so/skills --global --skill loops-api
 npx skills add loops-so/skills --global --skill loops-cli
 npx skills add loops-so/skills --global --skill loops-lmx
 npx skills add loops-so/skills --global --skill loops-email-sending-best-practices
+npx skills add loops-so/skills --global --skill loops-migrate
 ```
 
 Project-level installs are also supported. Omit `--global` if you want the skills scoped to the current repository instead of user-level.
@@ -71,8 +72,8 @@ In the Cursor desktop app:
 
 | Platform        | Typical invocation                                                                                       |
 | --------------- | -------------------------------------------------------------------------------------------------------- |
-| **Claude Code** | `/loops-api`, `/loops-cli`, `/loops-lmx`, `/loops-email-sending-best-practices`  |
-| **Cursor**      | `/loops-api`, `/loops-cli`, `/loops-lmx`, `/loops-email-sending-best-practices` in Agent chat (type `/`) |
+| **Claude Code** | `/loops-api`, `/loops-cli`, `/loops-lmx`, `/loops-email-sending-best-practices`, `/loops-migrate`  |
+| **Cursor**      | `/loops-api`, `/loops-cli`, `/loops-lmx`, `/loops-email-sending-best-practices`, `/loops-migrate` in Agent chat (type `/`) |
 | **Codex**       | Describe the task, or `@loops` / `@` and choose a skill                                                  |
 
 ## Verify install
@@ -85,12 +86,13 @@ After installation, try a task that should trigger one of the skills:
 - "Design a new onboarding email using existing Loops themes/components, then write it in LMX."
 - "Write an LMX onboarding email template."
 - "Audit this onboarding email flow for deliverability issues."
+- "Audit this repository and migrate its email stack to Loops."
 
 ## What's included
 
 This repo currently ships:
 
-- four installable skills that auto-load when relevant
+- five installable skills that auto-load when relevant
 - detailed reference files for API, SDK, CLI, LMX, and email-program guidance
 
 This repo does not currently ship:
@@ -99,6 +101,27 @@ This repo does not currently ship:
 - MCP servers
 
 ## Available skills
+
+### `loops-migrate`
+
+Use this skill when you need to:
+
+- audit an existing repository's complete email surface
+- produce a baseline Loops migration report card before changes
+- map every source flow to Loops campaigns, transactional emails, workflows, events, lists, themes, and components
+- estimate provider code, dead files, environment variables, and packages the migration will remove
+- replace provider sends with Loops transactional email, events, workflows, or campaigns
+- convert React Email, MJML, HTML, or provider templates to LMX
+- provision Loops themes, components, groups, and segments plus draft emails and workflows
+- remove old provider code and finish with a verified report card
+
+Example prompts:
+
+- "Migrate this repository from Resend to Loops."
+- "Show me a Loops migration report card before changing anything."
+- "Replace this SMTP and React Email stack with Loops."
+
+Skill file: [skills/loops-migrate/SKILL.md](./skills/loops-migrate/SKILL.md)
 
 ### `loops-api`
 

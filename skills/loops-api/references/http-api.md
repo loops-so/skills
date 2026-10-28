@@ -1,5 +1,7 @@
 # Loops HTTP API and SDK Reference
 
+Verified against OpenAPI **1.21.2**.
+
 ## Contents
 
 - Source URLs

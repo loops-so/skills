@@ -1,0 +1,4 @@
+interface:
+  display_name: "Loops Migration"
+  short_description: "Audit and migrate an email stack to Loops"
+  default_prompt: "Use $loops-migrate to audit this repository and present a concise migration proposal with a clearly qualified cost comparison. End by asking me to say migrate, and change nothing before that approval. After approval, migrate on a new branch and finish with a compact verified report card."
