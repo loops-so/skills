@@ -6,16 +6,17 @@ description: >
   includes the Loops HTTP API and official SDKs for server-side contact,
   contact-property, mailing-list, event, API-key-validation,
   transactional-email, content editing (campaigns, groups, audience segments,
-  email messages, themes, and components), workflow graph/node mutation, and
-  inbound Loops webhooks. Trigger on phrases like "Loops API", "Loops SDK",
-  "create a campaign via API", "update email message LMX", "create a theme via
-  API", "create a workflow via API", "add a workflow node", "Loops webhook",
+  email messages, themes, and components), workflow graph/node mutation,
+  metrics, and inbound Loops webhooks. Trigger on phrases like "Loops API",
+  "Loops SDK", "create a campaign via API", "update email message LMX",
+  "create a theme via API", "create a workflow via API", "add a workflow node",
+  "campaign metrics", "workflow group", "Loops webhook",
   "send a Loops event from my app", "add a contact to Loops in a webhook",
   "send a transactional email from backend code", or any time the user wants
   to integrate Loops into their app, backend, webhook, or automation. Do not
   trigger for CLI or shell-only requests.
 metadata:
-  version: 1.7.0
+  version: 1.8.0
 ---
 
 # Loops API and SDK Skill
@@ -32,12 +33,13 @@ Use this skill when the user needs to:
 - send transactional emails or create, edit, and publish transactional email templates via API
 - manage contact suppression status/removal
 - create draft campaigns with audience targeting (mailing list, segment, or filter), groups, and scheduling
-- organize campaigns and transactional emails into groups
+- organize campaigns, transactional emails, and workflows into groups
 - list or create audience segments for campaign/workflow targeting
 - update email-message content (subject, sender, CC/BCC, format, fallbacks, LMX), send previews, and run Guardian checks
 - list, create, update, and get themes and components to build LMX payloads
 - upload images for email content
 - create, update, inspect, and delete workflows and workflow nodes (including mailing-list changes, branches, reroutes, and queued-contact handling)
+- fetch campaign, transactional, or workflow-node metrics
 - list event patterns for workflow event triggers
 - receive and verify inbound Loops webhooks (contact, email send, and engagement events)
 - validate credentials or troubleshoot Loops request behavior from code
@@ -80,7 +82,7 @@ If the user is working from the terminal instead of writing application code, us
 
 - Auth, base URL, rate limits, contacts, suppression, properties, lists, events, uploads, inbound Loops webhooks, SDK examples, and HTTP errors:
   Read `references/http-api.md`
-- Campaigns, campaign groups, transactional groups, audience segments, workflows, workflow nodes, event patterns, transactional emails, email messages, themes, components, and revision-safe updates:
+- Campaigns, campaign groups, transactional groups, workflow groups, audience segments, workflows, workflow nodes, event patterns, transactional emails, email messages, themes, components, metrics, and revision-safe updates:
   Read `references/http-api.md`. For LMX markup itself, also use the `loops-lmx` skill.
 
 ## Output Checklist
