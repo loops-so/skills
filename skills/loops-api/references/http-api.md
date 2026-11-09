@@ -22,7 +22,7 @@
 - https://loops.so/docs/sdks/php
 - https://loops.so/docs/sdks/ruby
 - https://loops.so/docs/webhooks
-- https://app.loops.so/openapi.json
+- https://app.loops.so/openapi.json (OpenAPI 1.22.8)
 
 ## Authentication
 
@@ -55,6 +55,7 @@ https://app.loops.so/api
 Use an official SDK when the user's language has one:
 
 - **JavaScript/TypeScript**: `npm install loops`
+- **Go**: `go get github.com/loops-so/loops-go`
 - **Nuxt**: `npm install nuxt-loops`
 - **PHP**: `composer require loops-so/loops`
 - **Ruby**: `gem install loops_sdk`
@@ -261,7 +262,7 @@ Public workflows are limited to **400 nodes**. Generated children count toward t
 
 #### Typical workflow build sequence
 
-1. `POST /v1/workflows` with a name — creates a draft with a blank trigger and exit node; save `id` and `workflowRevisionId`.
+1. `POST /v1/workflows` with a name (optional `workflowGroupId`; defaults to Unsorted) — creates a draft with a blank trigger and exit node; save `id` and `workflowRevisionId`.
 2. Optionally set `mailingListId` via `POST /v1/workflows/{workflowId}/mailing-list`.
 3. Configure the trigger with `POST /v1/workflows/{workflowId}/nodes/{nodeId}` (for event triggers, use `GET /v1/event-patterns` first).
 4. Insert nodes with `POST /v1/workflows/{workflowId}/nodes` (`insertMode: "between"`, `"before"`, or `"after"`), then update each node's config.
@@ -274,7 +275,7 @@ Public workflows are limited to **400 nodes**. Generated children count toward t
 GET /v1/workflows?perPage=20&cursor=...
 ```
 
-`perPage` must be between 10 and 50 (default 20). Returns paginated `data` with `id`, `name`, `createdAt`, and `updatedAt`.
+`perPage` must be between 10 and 50 (default 20). Returns paginated `data` with `id`, `url`, `name`, `workflowGroupId`, `createdAt`, and `updatedAt`.
 
 ```json
 {
@@ -289,7 +290,9 @@ GET /v1/workflows?perPage=20&cursor=...
   "data": [
     {
       "id": "cwf42l54f20i1la0lfooe3z12",
+      "url": "https://app.loops.so/workflows/cwf42l54f20i1la0lfooe3z12",
       "name": "Onboarding drip",
+      "workflowGroupId": "cwg42l54f20i1la0lfooe3z12",
       "createdAt": "2025-02-02T02:56:28.845Z",
       "updatedAt": "2025-02-10T14:30:00.000Z"
     }
@@ -309,11 +312,12 @@ POST /v1/workflows
 {
   "name": "Onboarding drip",
   "description": "Welcome new signups",
-  "mailingListId": "cm06f5v0e45nf0ml5754o9cix"
+  "mailingListId": "cm06f5v0e45nf0ml5754o9cix",
+  "workflowGroupId": "cwg42l54f20i1la0lfooe3z12"
 }
 ```
 
-`name` is required. `description` and `mailingListId` are optional (`mailingListId` may be `null`). Creates a draft workflow with a blank trigger and exit node. Returns a `SimplifiedWorkflow`. After creation, change the mailing list with `/v1/workflows/{workflowId}/mailing-list`. Returns `500` if workflow creation is unavailable for the team.
+`name` is required. `description`, `mailingListId`, and `workflowGroupId` are optional (`mailingListId` may be `null`). When `workflowGroupId` is omitted, the workflow is added to the team's Unsorted group. Creates a draft workflow with a blank trigger and exit node. Returns a `SimplifiedWorkflow` including `url` and `workflowGroupId`. After creation, change the mailing list with `/v1/workflows/{workflowId}/mailing-list`. Returns `400` if the workflow group is not found.
 
 #### Get a workflow
 
@@ -321,7 +325,7 @@ POST /v1/workflows
 GET /v1/workflows/{workflowId}
 ```
 
-Returns a simplified workflow graph with `id`, `workflowRevisionId`, `status`, `name`, `description`, `mailingListId`, `rootNodeId`, and a `nodes` map keyed by node ID.
+Returns a simplified workflow graph with `id`, `url`, `workflowRevisionId`, `status`, `name`, `description`, `workflowGroupId`, `mailingListId`, `rootNodeId`, and a `nodes` map keyed by node ID.
 
 `status` is one of `Draft`, `Sending`, `Paused`, or `PausedAndQueueing`.
 
@@ -337,10 +341,12 @@ Use `GET /v1/workflows/{workflowId}/nodes/{nodeId}` for full node detail.
 ```jsonc
 {
   "id": "cwf42l54f20i1la0lfooe3z12",
+  "url": "https://app.loops.so/workflows/cwf42l54f20i1la0lfooe3z12",
   "workflowRevisionId": "crv42l54f20i1la0lfooe3z99",
   "status": "Draft",
   "name": "Onboarding drip",
   "description": "Welcome new signups",
+  "workflowGroupId": "cwg42l54f20i1la0lfooe3z12",
   "mailingListId": "cm06f5v0e45nf0ml5754o9cix",
   "rootNodeId": "cf16k73gq014h3mmj5b6jdi9r",
   "nodes": {
@@ -378,13 +384,14 @@ Returns `400` for an invalid `workflowId`. Returns `404` if the workflow is not 
 POST /v1/workflows/{workflowId}
 ```
 
-Updates display properties only. At least one of `name` or `description` must be provided. To change the mailing list, use `/v1/workflows/{workflowId}/mailing-list` instead (mailing-list changes may remove queued contacts).
+Updates display properties and group. At least one of `name`, `description`, or `workflowGroupId` must be provided. To change the mailing list, use `/v1/workflows/{workflowId}/mailing-list` instead (mailing-list changes may remove queued contacts).
 
 ```jsonc
 {
   "expectedRevisionId": "crv42l54f20i1la0lfooe3z99",
   "name": "Onboarding drip v2",
-  "description": "Updated welcome sequence"
+  "description": "Updated welcome sequence",
+  "workflowGroupId": "cwg42l54f20i1la0lfooe3z12"
 }
 ```
 
@@ -412,6 +419,37 @@ If the workflow is currently sending or has queued contacts, the API returns `40
   "confirmDelete": true
 }
 ```
+
+#### Workflow groups
+
+Organize workflows into groups. Same shape as campaign groups and transactional groups. The reserved name `"Unsorted"` cannot be used when creating or renaming groups, and the Unsorted group cannot be edited.
+
+```
+GET /v1/workflow-groups?perPage=20&cursor=...
+POST /v1/workflow-groups
+GET /v1/workflow-groups/{workflowGroupId}
+POST /v1/workflow-groups/{workflowGroupId}
+```
+
+Create body:
+
+```jsonc
+{
+  "name": "Onboarding",
+  "description": "Top of funnel"
+}
+```
+
+Update body (at least one field required):
+
+```jsonc
+{
+  "name": "Activation",
+  "description": "Updated description"
+}
+```
+
+List and get responses return `id`, `name`, `description`, and timestamps.
 
 #### Change workflow mailing list
 
@@ -555,6 +593,14 @@ Returns full detail for a single node plus `workflowRevisionId`. All node types 
 `appliesDownstream` on `AudienceFilter` matches the UI "Filter scope" option: `true` applies to all downstream nodes; `false` applies only to the current node.
 
 Returns `400` for invalid IDs. Returns `404` if the workflow or node is not found.
+
+##### Get workflow node metrics
+
+```
+GET /v1/workflows/{workflowId}/nodes/{nodeId}/metrics
+```
+
+Returns all-time engagement counters for a `SendEmailAction` node: `sends`, `opens`, `clicks`, `unsubscribes`, `spamReports`, `hardBounces`, `softBounces`. Opens and clicks count sends, not events (a send opened five times counts once). Returns `400` for any other node type, or if the node has no email message. A `SendEmailAction` that has not sent yet reports every counter as `0`.
 
 #### Update a workflow node
 
@@ -749,6 +795,7 @@ Preferred endpoint. Returns a paginated list of transactional emails, most recen
   "data": [
     {
       "id": "cll42l54f20i1la0lfooe3z12",
+      "url": "https://app.loops.so/transactional/cll42l54f20i1la0lfooe3z12",
       "name": "Welcome email",
       "draftEmailMessageId": null,
       "publishedEmailMessageId": "cem42l54f20i1la0lfooe3z12",
@@ -802,7 +849,7 @@ POST /v1/transactional-emails
 }
 ```
 
-Returns `201` with `id`, `draftEmailMessageId`, `draftEmailMessageContentRevisionId`, `publishedEmailMessageId` (null until published), `transactionalGroupId`, timestamps, and `dataVariables`.
+Returns `201` with `id`, `url`, `draftEmailMessageId`, `draftEmailMessageContentRevisionId`, `publishedEmailMessageId` (null until published), `transactionalGroupId`, timestamps, and `dataVariables`.
 
 ##### Get a transactional email
 
@@ -810,7 +857,15 @@ Returns `201` with `id`, `draftEmailMessageId`, `draftEmailMessageContentRevisio
 GET /v1/transactional-emails/{transactionalId}
 ```
 
-Returns `id`, `name`, `draftEmailMessageId`, `publishedEmailMessageId`, `transactionalGroupId`, timestamps, and `dataVariables`.
+Returns `id`, `url`, `name`, `draftEmailMessageId`, `publishedEmailMessageId`, `transactionalGroupId`, timestamps, and `dataVariables`.
+
+##### Get transactional email metrics
+
+```
+GET /v1/transactional-emails/{transactionalId}/metrics
+```
+
+Returns all-time delivery counters totalled across every published version: `sends`, `deliveries`, `spamReports`, `hardBounces`, `softBounces`.
 
 ##### Update a transactional email
 
@@ -899,7 +954,7 @@ A draft campaign can be sent to different audience types:
 - **`audienceSegmentId`** — send to a saved segment (`GET /v1/audience-segments`).
 - **`audienceFilter`** — inline filter conditions (same tree shape as segment `filter`).
 
-All three options can be used together. If a mailing list is applied, the segment/filter will be applied within that mailing list. If a filter is used with a segment, the filter edits the segment's saved filter. 
+All three options can be used together. If a mailing list is applied, the segment/filter is applied within that mailing list. If a filter is used with a segment, the filter is applied on top of the segment's saved filter — contacts must match both. 
 
 `audienceFilter` is a tree of conditions combined with `match: "all"` or `match: "any"`:
 
@@ -991,7 +1046,7 @@ List and get responses return `id`, `name`, `description`, and timestamps.
 GET /v1/campaigns?perPage=20&cursor=...
 ```
 
-`perPage` must be between 10 and 50 (default 20). Returns paginated `data` with `id`, `emailMessageId`, `name`, `status`, `campaignGroupId`, `mailingListId`, `audienceSegmentId`, `audienceFilter`, `scheduling`, and timestamps. Status values include `Draft`, `Scheduled`, `Sending`, and `Sent`.
+`perPage` must be between 10 and 50 (default 20). Returns paginated `data` with `id`, `url`, `emailMessageId`, `name`, `status`, `campaignGroupId`, `mailingListId`, `audienceSegmentId`, `audienceFilter`, `scheduling`, and timestamps. Status values include `Draft`, `Scheduled`, `Sending`, and `Sent`.
 
 ##### Create a campaign
 
@@ -999,7 +1054,7 @@ GET /v1/campaigns?perPage=20&cursor=...
 POST /v1/campaigns
 ```
 
-Only `name` is required. Creates a draft campaign and an empty email message in one request.
+Only `name` is required. Creates a draft campaign and an empty email message in one request. When `campaignGroupId` is omitted, the campaign is added to the team's Unsorted group.
 
 ```jsonc
 {
@@ -1014,7 +1069,7 @@ Only `name` is required. Creates a draft campaign and an empty email message in 
 }
 ```
 
-Returns `201` with `id`, `emailMessageId`, `emailMessageContentRevisionId`, `campaignGroupId`, audience fields, `scheduling`, and timestamps. Save the campaign `id`, `emailMessageId`, and `emailMessageContentRevisionId` for subsequent updates.
+Returns `201` with `id`, `url`, `emailMessageId`, `emailMessageContentRevisionId`, `campaignGroupId`, audience fields, `scheduling`, and timestamps. Save the campaign `id`, `emailMessageId`, and `emailMessageContentRevisionId` for subsequent updates.
 
 Returns `404` if a referenced mailing list or audience segment is not found. Returns `400` if the campaign group is not found or no sending domain is configured.
 
@@ -1024,7 +1079,15 @@ Returns `404` if a referenced mailing list or audience segment is not found. Ret
 GET /v1/campaigns/{campaignId}
 ```
 
-Returns `id`, `name`, `status`, `emailMessageId`, `campaignGroupId`, `mailingListId`, `audienceSegmentId`, `audienceFilter`, `scheduling`, and timestamps.
+Returns `id`, `url`, `name`, `status`, `emailMessageId`, `campaignGroupId`, `mailingListId`, `audienceSegmentId`, `audienceFilter`, `scheduling`, and timestamps.
+
+##### Get campaign metrics
+
+```
+GET /v1/campaigns/{campaignId}/metrics
+```
+
+Returns all-time engagement counters for a **sent** campaign: `sends`, `opens`, `clicks`, `unsubscribes`, `spamReports`, `hardBounces`, `softBounces`. Opens and clicks count sends, not events. Returns `400` if the campaign has not been sent yet or has no email message.
 
 ##### Update a campaign
 
@@ -1047,7 +1110,7 @@ Updates a draft campaign. At least one field is required. Returns `409` if the c
 }
 ```
 
-Setting `audienceSegmentId` without `audienceFilter` clears any `audienceFilter`. You can also send an inline `audienceFilter` instead of a segment.
+Setting `audienceSegmentId` without `audienceFilter` clears any `audienceFilter` (and the reverse). When both are provided, the filter is applied on top of the segment — contacts must match both.
 
 #### Email messages
 
@@ -1094,7 +1157,7 @@ Updates draft email-message fields. All body fields are optional in the schema, 
 
 `fromEmail` is the sender username only, without `@` or a domain. The team's sending domain is appended automatically.
 
-`ccEmail` and `bccEmail` require CC/BCC to be enabled for the team. `languageCode` requires translation to be enabled.
+`ccEmail` and `bccEmail` require CC/BCC to be enabled for the team and are **not supported for campaign emails** (they are still accepted for workflow and transactional emails). `languageCode` requires translation to be enabled. A campaign that owns the message must be in `Draft` status; a transactional email must be a draft; a workflow must not be `Sending`.
 
 Fallback maps (`contactPropertiesFallbacks`, `eventPropertiesFallbacks`, `dataVariablesFallbacks`) use per-key merge: a string value sets the fallback, `null` deletes it, and omitted keys are left unchanged.
 
@@ -1731,7 +1794,7 @@ curl -X POST https://app.loops.so/api/v1/contacts/create \
 | --- | --- | --- |
 | 401 | Invalid API key, or workflow/content API not enabled | Check the key is correct and has not been revoked; confirm the workflow or content API is enabled for your team |
 | 400 | Bad request | Check required fields and value types |
-| 404 | Not found | Contact, transactional email, campaign, campaign group, transactional group, audience segment, workflow, workflow node, event pattern, theme, component, email message, or upload ID does not exist |
+| 404 | Not found | Contact, transactional email, campaign, campaign group, transactional group, workflow group, audience segment, workflow, workflow node, event pattern, theme, component, email message, or upload ID does not exist |
 | 409 | Conflict | Email or userId already exists, idempotency key was reused, campaign is not draft, transactional email has no draft to publish, email message uses MJML or content cannot be parsed, email/workflow `expectedRevisionId` is stale, a reserved group name was used, or workflow delete needs `confirmDelete: true` because the workflow is sending or has queued contacts |
 | 413 | Payload too large | LMX body exceeds 100 KB (email messages) or the component LMX size limit, or upload `contentLength` exceeds 4 MB |
 | 422 | LMX failed to compile, draft failed validation / unsafe content, or a component body change would break emails using it | Fix invalid LMX, missing required LMX attributes, XML escaping, Guardian/publish validation issues, or incompatible component variables |
@@ -1754,10 +1817,12 @@ Most v1 contact, event, and transactional request body string values are limited
 - **Content revision IDs**: After `POST /v1/campaigns`, use `emailMessageContentRevisionId` as the first `expectedRevisionId`. After each `POST /v1/email-messages/{id}`, save `contentRevisionId` for the next update.
 - **Themes and components before LMX**: List and get themes/components so `<Style themeId="..." />` and `<Component componentId="..." />` reference real IDs. Create or update with `POST /v1/themes` and `POST /v1/components`. Style and LMX body updates cascade to emails using that asset; responses include `affectedEmailCount`.
 - **Draft-only writes**: Campaign and email-message updates return `409` once a campaign leaves draft status.
-- **Campaign audience**: Target a `mailingListId`, `audienceSegmentId`, or inline `audienceFilter`. Setting `audienceSegmentId` clears `audienceFilter`.
+- **Campaign audience**: Target a `mailingListId`, `audienceSegmentId`, and/or inline `audienceFilter`. Setting a segment without a filter (or a filter without a segment) clears the other; pass both to apply the filter on top of the segment.
 - **Campaign scheduling**: Use `scheduling.method` of `"now"` or `"schedule"`. `timestamp` is required and must be in the future when scheduling.
-- **Groups**: Campaign and transactional groups cannot be named `"Unsorted"`, and the Unsorted group cannot be edited. Omit `campaignGroupId` or `transactionalGroupId` on create to use the team's default group.
-- **Workflow mutations**: Create with `POST /v1/workflows`, inspect with `GET /v1/workflows/{id}`, mutate nodes via `/v1/workflows/{id}/nodes`, and always pass the latest `workflowRevisionId` as `expectedRevisionId`. Use `/mailing-list` for list changes. Destructive ops support `dryRun` and `queuedContactPolicy: "discard"`. Insert with `between`, `before`, or `after`. Reroute a single-output connection with `/nodes/{nodeId}/reroute`. Public workflows are capped at 400 nodes.
+- **Groups**: Campaign, transactional, and workflow groups cannot be named `"Unsorted"`, and the Unsorted group cannot be edited. Omit `campaignGroupId` or `workflowGroupId` on create to use the team's Unsorted group.
+- **Resource URLs**: Campaign, transactional, and workflow responses include a `url` field pointing at the object in the Loops app.
+- **Metrics**: `GET /v1/campaigns/{id}/metrics` and `GET /v1/workflows/{id}/nodes/{nodeId}/metrics` return engagement counters (campaigns must already have been sent; workflow metrics are `SendEmailAction` only). `GET /v1/transactional-emails/{id}/metrics` returns delivery counters totalled across published versions.
+- **Workflow mutations**: Create with `POST /v1/workflows` (optional `workflowGroupId`), inspect with `GET /v1/workflows/{id}`, mutate nodes via `/v1/workflows/{id}/nodes`, and always pass the latest `workflowRevisionId` as `expectedRevisionId`. Move groups with `workflowGroupId` on update. Use `/mailing-list` for list changes. Destructive ops support `dryRun` and `queuedContactPolicy: "discard"`. Insert with `between`, `before`, or `after`. Reroute a single-output connection with `/nodes/{nodeId}/reroute`. Public workflows are capped at 400 nodes.
 - **Workflow delete**: `DELETE /v1/workflows/{id}` returns `204`. If the workflow is sending or has queued contacts, retry with `confirmDelete: true`.
 - **Event patterns for triggers**: List with `GET /v1/event-patterns`, then set `eventPatternId` or `eventName` on an `EventTrigger` node update.
 - **Inbound Loops webhooks**: Configure one endpoint in Settings → Webhooks. Verify `webhook-id` / `webhook-timestamp` / `webhook-signature` against the raw body. Return 2xx. Workflow events keep `loop` names (`loop.email.sent`, `sourceType: "loop"`).
