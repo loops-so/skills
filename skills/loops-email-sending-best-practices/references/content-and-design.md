@@ -25,6 +25,7 @@
   - campaigns use contact properties (`{contact.*}`)
   - workflow/lifecycle emails use contact properties (`{contact.*}`) and event properties (`{event.*}`)
   - transactional emails use data variables (`{data.*}`)
+  - footer content can use `{system.company_name}`, `{system.company_address}`, and `{system.mailing_list_name}`; footer content can only use the `{contact.email}` contact property
 - Always provide fallbacks for contact properties in campaigns and for contact and event properties in workflow emails. Loops warns that missing values can prevent the email from sending.
 - Use personalization to add context, not to simulate familiarity where none exists.
 

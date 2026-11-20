@@ -14,7 +14,7 @@ description: >
   prefer this skill for pure API implementation; use the Loops API skill for
   integration details.
 metadata:
-  version: 1.0.0
+  version: 1.0.1
 ---
 
 # Email Sending Best Practices
