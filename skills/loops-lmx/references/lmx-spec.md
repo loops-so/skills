@@ -402,6 +402,7 @@ LMX variables use braced expressions with explicit namespaces.
 | `{contact.firstName}` | Contact property / merge tag | Campaign and workflow email messages |
 | `{event.planName}` | Event property | Workflow email messages |
 | `{data.resetLink}` | Transactional data variable | Transactional email messages |
+| `{system.company_name}` | System variable | Footer content (see below) |
 
 Use explicit namespaces in LMX. The prefix tells Loops which data source to resolve at send time.
 
@@ -412,6 +413,20 @@ Email-type rules:
 - **Transactional emails** support `{data.*}` only.
 
 Variables can be used in LMX email bodies, and also in email sending settings (subject, preview, from name, from email, reply to), both in the Loops editor and when updating email messages with the API.
+
+### Footer content variables
+
+Do not recreate the legal footer, postal address, or unsubscribe block inside campaign, workflow, or transactional LMX. Loops appends required footer content automatically. When editing footer content itself (Settings → Footers, or with the API), use the variables below.
+
+Footer content can also use these system variables:
+
+```text
+{system.company_name}
+{system.company_address}
+{system.mailing_list_name}
+```
+
+Footer content can use `{contact.email}`, but no other contact properties.
 
 ### Contact properties (`{contact.X}`)
 
@@ -547,7 +562,9 @@ If a user asks for fallback behavior in LMX output, mention that the LMX markup 
 | Adjacent top-level `<Section>` siblings with no spacer | Add a line-break spacer between sections unless the user explicitly specified a different spacing treatment |
 | Adjacent top-level `blockColor` blocks with no spacer | Add visible vertical space between highlighted blocks unless they are intentionally one connected card |
 | Unescaped `<` or `&` in text | Use `&lt;` and `&amp;` |
-| Manual legal footer, postal address, or unsubscribe block | Omit it; Loops adds required footer content automatically. A branded footer component can appear above it |
+| Manual legal footer, postal address, or unsubscribe block | Omit it from email-message LMX; Loops adds required footer content automatically. A branded footer component can appear above it |
+| `{contact.firstName}` (or other non-email contact props) in footer content | Footer content may use `{contact.email}` only; use `{system.company_name}`, `{system.company_address}`, and `{system.mailing_list_name}` for company/list fields |
+| Inventing `{system.*}` tags in email-message LMX for company/address | Those system variables belong in footer content, not in campaign/workflow/transactional bodies |
 
 ---
 
