@@ -9,7 +9,7 @@ LMX (Loops Markup Language) is an XML-based email content format for the Loops e
 1. **XML, not HTML.** Tags are case-sensitive PascalCase: `<Paragraph>`, not `<paragraph>` or `<p>`.
 2. **Self-closing tags must use `/>`.** Example: `<Image src="..." />`, `<Br />`, `<Divider />`.
 3. **Only documented tags are valid.** Unknown tags fail parsing.
-4. **Unknown attributes are warnings and have no effect.** Do not invent attributes.
+4. **Unknown static attributes are dropped with an `unknown_attr` warning.** The update still returns `200` with a `warnings` array. A variable in an attribute that does not accept variables is an error. Do not invent attributes.
 5. **Required attributes must be present.** Required attrs include `src` on `<Image />`, `componentId` on `<Component>`, `name` on `<Icon />`, and `href` on `<Link>`. Missing required attributes can make email-message updates fail with HTTP 422 because LMX cannot compile.
 6. **All attribute values are quoted strings.** Numbers and booleans are written as strings: `width="400"`, `notrack="true"`.
 7. **Top-level text and variables are invalid.** Wrap all text and variables in a block tag such as `<Paragraph>`.
@@ -28,7 +28,7 @@ A valid document contains zero or more top-level block tags, plus an optional si
 ```text
 H1, H2, H3, Paragraph, Quote, CodeBlock, Button, Image,
 Divider, OrderedList, UnorderedList, Columns, Component,
-Icons, Section, Style
+For, Icons, Section, Style
 ```
 
 Not valid at the top level:
@@ -66,7 +66,8 @@ Nesting summary:
 - `<Columns>` -> two to four `<ColumnItem>` children.
 - `<ColumnItem>` -> block tags, excluding `<Style>` and nested `<Columns>`.
 - `<Component>` -> block tags, excluding `<Style>` and nested `<Component>`.
-- `<Section>` -> block tags, excluding `<Style>` and nested `<Section>`.
+- `<Section>` -> block tags, excluding `<Style>`. A section can hold one level of nested `<Section>`; a nested section cannot hold another.
+- `<For>` -> one or more block tags, excluding `<Style>`.
 - `<Icons>` -> one to 100 `<Icon />` children.
 - Self-closing with no children: `<Image />`, `<Divider />`, `<Br />`, `<Icon />`, `<Style />`.
 
@@ -237,7 +238,7 @@ Lists must contain at least one `<ListItem>`. `<ListItem>` accepts inline conten
 
 ### 5.10 `<Columns>` and `<ColumnItem>`
 
-Multi-column layout. `<Columns>` must contain two to four `<ColumnItem>` children. `<ColumnItem>` takes no attributes and contains block tags, excluding nested columns.
+Multi-column layout. `<Columns>` must contain two to four `<ColumnItem>` children. `<ColumnItem>` accepts optional `verticalAlignment` and block style attrs, and contains block tags, excluding nested columns.
 
 `<Columns>` attributes:
 
@@ -287,12 +288,16 @@ Components cannot nest inside components.
 
 ### 5.12 `<Section>`
 
-Clickable or styled block container. Use sections to create layout cards, groups, or framed content areas around related blocks. Contains block tags. Sections cannot nest inside sections.
+Clickable, styled, or conditional block container. Use sections to create layout cards, groups, or framed content areas around related blocks. Contains block tags. A section can contain one level of nested `<Section>`, and both levels can use `if`.
 
 | Attribute | Type | Notes |
 | --- | --- | --- |
 | `href` | url / dynamic string | Supports variables |
 | `notrack` | boolean | `"true"` disables tracking |
+| `if` | variable | One prefixed variable, such as `{contact.plan}`; the section renders only when the condition is true |
+| `ifOperation` | enum | Defaults to `not_empty`. Also `empty`, `equal`, `not_equal`, `contains`, `not_contains`, `numeric_equal`, `numeric_not_equal`, `greater_than`, `less_than`, `true`, `false` |
+| `ifValue` | string | Required for comparison operators such as `equal`, `contains`, and `greater_than` |
+| `blockBorderWidth`, `blockBorderColor` | number / hex color | Section border; set both |
 | block style attrs | mixed | Block background / padding |
 
 ```xml
@@ -300,7 +305,12 @@ Clickable or styled block container. Use sections to create layout cards, groups
   <H2>Account summary</H2>
   <Paragraph>Review your latest activity.</Paragraph>
 </Section>
+<Section if="{contact.plan}" ifOperation="equal" ifValue="pro" blockColor="#f8fafc" blockBorderRadius="12">
+  <Paragraph>Thanks for being on Pro.</Paragraph>
+</Section>
 ```
+
+`ifOperation` and `ifValue` require `if`. A missing condition variable hides the section instead of failing the send, and content inside a hidden section is dropped.
 
 ### 5.13 `<Icons>` and `<Icon />`
 
@@ -321,7 +331,7 @@ Social/icon row. `<Icons>` must contain one to 100 `<Icon />` children.
 | Attribute | Type | Required | Notes |
 | --- | --- | :---: | --- |
 | `name` | string | yes | Known Font Awesome icon name |
-| `href` | url | | |
+| `href` | url / dynamic string | | Supports variables |
 | `notrack` | boolean | | |
 
 ```xml
@@ -333,7 +343,26 @@ Social/icon row. `<Icons>` must contain one to 100 `<Icon />` children.
 
 Common icon names include `twitter`, `instagram`, `linkedin`, `youtube`, `github`, `discord`, `envelope`, `link`, and `phone`. Unknown icon names are validation errors. Per-icon `color` is not supported.
 
-### 5.14 `<Style />`
+### 5.14 `<For>`
+
+Repeats its children once per item in an array data variable. Transactional emails only; campaigns and workflow emails reject `<For>`.
+
+| Attribute | Type | Notes |
+| --- | --- | --- |
+| `variable` | variable | One `{data.*}` array variable, such as `{data.items}` |
+
+Children are block tags, and at least one is required. Inside `<For>`, read a field of the current item with `{data.items[].field}`.
+
+```xml
+<For variable="{data.items}">
+  <H3>{data.items[].name}</H3>
+  <Paragraph>{data.items[].price}</Paragraph>
+</For>
+```
+
+The matching `dataVariables` value is an array of objects whose fields are strings, numbers, or booleans.
+
+### 5.15 `<Style />`
 
 Self-closing top-level metadata. It does not render content. All attributes are optional. Use `themeId` for the current theme/style-template id.
 
@@ -500,6 +529,21 @@ Do not use editor or MJML transactional syntax in LMX:
 - `{resetLink}` (unprefixed) is invalid in LMX; use `{data.resetLink}`.
 - `{DATA_VARIABLE:resetLink}` is valid in MJML and the Loops editor, but not in LMX.
 
+### System variables (`{system.X}`)
+
+Loops fills these in at send time:
+
+| Variable | Where it works |
+| --- | --- |
+| `{system.unsubscribe_link}` | Email content and footers. It resolves to a working unsubscribe URL only in campaign and workflow emails; transactional emails have no unsubscribe link |
+| `{system.company_name}` | Footers only |
+| `{system.company_address}` | Footers only |
+| `{system.mailing_list_name}` | Footers only |
+
+```xml
+<Paragraph><Link href="{system.unsubscribe_link}">Unsubscribe</Link></Paragraph>
+```
+
 Use the namespace that matches the email type: `{contact.X}` for campaigns and workflow emails, `{event.X}` for workflow emails when the value comes from the triggering event, and `{data.X}` for transactional emails. Do not mix namespaces across email types.
 
 Variables are valid in:
@@ -509,14 +553,18 @@ Variables are valid in:
 - supported dynamic attributes:
   - `<Button href="...">`
   - `<Link href="...">`
+  - `<Icon href="...">`
   - `<Image alt="..." href="..." dynamicSrc="...">`
   - `<Section href="...">`
+- whole-variable attributes, with no surrounding text:
+  - `<Section if="{contact.plan}">`
+  - `<For variable="{data.items}">`
 
 Variables are not valid:
 
 - at the top level
 - inside `<CodeBlock>` (braces are literal)
-- inside unsupported attributes such as `<Image src="{contact.avatarUrl}" />`
+- inside unsupported attributes such as `<Image src="{contact.avatarUrl}" />` (this is a validation error)
 - unprefixed in validated LMX (`{firstName}` should be `{contact.firstName}`, `{event.firstName}`, or `{data.firstName}` depending on email type)
 
 ### Fallback Values
@@ -555,6 +603,8 @@ If a user asks for fallback behavior in LMX output, mention that the LMX markup 
 | `{resetLink}` in transactional LMX | Use `{data.resetLink}` |
 | `{contact.firstName|there}` or similar fallback syntax | No inline fallback syntax exists in LMX; configure fallbacks outside the LMX string |
 | `<Image src="{contact.imageUrl}" />` | Use static `src` plus `dynamicSrc="{contact.imageUrl}"` |
+| `<For>` in a campaign or workflow email | Arrays are valid only in transactional email LMX |
+| `<Section>` inside a nested `<Section>` | Sections nest only one level deep |
 | `<Columns>` with one or more than four `<ColumnItem>` children | Use two to four `<ColumnItem>` children |
 | `<Icon color="#f00" />` | Set `color` on `<Icons>` and use one of the allowed colors |
 | `<Icons color="#334155">` | Use `#000000`, `#808080`, or `#ffffff` |
