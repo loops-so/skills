@@ -399,7 +399,7 @@ Do not wrap every heading/paragraph pair in a `<Section>` by default. Most email
 </Section>
 ```
 
-Do not nest `<Section>` inside another `<Section>`. If you need grouped content inside a card, use ordinary child blocks, lists, columns, or dividers within one section.
+Sections can nest only one level deep. Avoid card-on-card styling: prefer ordinary child blocks, lists, columns, or dividers for grouped content inside a card, and reserve a nested `<Section>` for a conditional (`if`) or clearly distinct inner block.
 
 When an explicit card-style layout does require multiple top-level `<Section>` siblings, do not place them directly next to each other. Add a line-break spacer between them unless the user explicitly specifies a different spacing treatment:
 

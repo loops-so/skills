@@ -19,7 +19,7 @@ description: >
   overrides a specific rule. Do not trigger for questions about the Loops HTTP
   API, SDK integration, or CLI unless email body content is also involved.
 metadata:
-  version: 1.1.16
+  version: 1.1.17
 ---
 
 # LMX Skill
@@ -89,8 +89,10 @@ Before returning any LMX output, verify:
 - [ ] XML-sensitive characters are escaped: `&` as `&amp;`, `<` as `&lt;`, and `"` in attributes as `&quot;`
 - [ ] Required attrs are present: `src` on `<Image />`, `componentId` on `<Component>`, `name` on `<Icon />`, and `href` on `<Link>`
 - [ ] No text or inline tags at the top level
-- [ ] Variables use explicit LMX namespaces and only appear where supported: inline content, button text, `<Button href>`, `<Link href>`, `<Image alt/href/dynamicSrc>`, and `<Section href>`
+- [ ] Variables use explicit LMX namespaces and only appear where supported: inline content, button text, `<Button href>`, `<Link href>`, `<Icon href>`, `<Image alt/href/dynamicSrc>`, `<Section href>`, and the whole value of `<Section if>` and `<For variable>`
 - [ ] Variable namespaces match the email type: campaigns use `{contact.apiName}`; workflow emails use `{contact.apiName}` and/or `{event.propertyName}`; transactional emails use `{data.variableName}` (not unprefixed `{variableName}` or `{DATA_VARIABLE:...}`)
+- [ ] `<For variable="{data.items}">` appears only in transactional emails, has at least one block child, and reads item fields as `{data.items[].field}`
+- [ ] `<Section>` nests at most one level deep
 - [ ] No inline fallback syntax is invented; fallbacks live outside the LMX string
 - [ ] `<Button>` text has no inline tags, but can contain variables; include `href` for clickable CTA buttons
 - [ ] `<CodeBlock>` treats braces literally
