@@ -431,7 +431,7 @@ LMX variables use braced expressions with explicit namespaces.
 | `{contact.firstName}` | Contact property / merge tag | Campaign and workflow email messages |
 | `{event.planName}` | Event property | Workflow email messages |
 | `{data.resetLink}` | Transactional data variable | Transactional email messages |
-| `{system.unsubscribe_link}` | System variable | All email messages and footers |
+| `{system.company_name}` | System variable | Footer content (see below) |
 
 Use explicit namespaces in LMX. The prefix tells Loops which data source to resolve at send time.
 
@@ -441,7 +441,30 @@ Email-type rules:
 - **Workflow emails** support `{contact.*}` and `{event.*}`.
 - **Transactional emails** support `{data.*}` only.
 
-Variables can be used in LMX email bodies, and also in email sending settings (subject, preview, from name, from email, reply to), both in the Loops editor and when updating email messages with the API.
+Variables can be used in LMX email bodies, and also in email sending settings (subject, preview, from name, from email, reply to), both in the Loops editor and when updating email messages with the API. Some variables can be used in footers.
+
+Use the namespace that matches the email type: `{contact.X}` for campaigns and workflow emails, `{event.X}` for workflow emails when the value comes from the triggering event, and `{data.X}` for transactional emails. Do not mix namespaces across email types.
+
+Variables are valid in:
+
+- inline content: headings, paragraphs, quotes, list items, and inline tags
+- button text
+- supported dynamic attributes:
+  - `<Button href="...">`
+  - `<Link href="...">`
+  - `<Icon href="...">`
+  - `<Image alt="..." href="..." dynamicSrc="...">`
+  - `<Section href="...">`
+- whole-variable attributes, with no surrounding text:
+  - `<Section if="{contact.plan}">`
+  - `<For variable="{data.items}">`
+
+Variables are not valid:
+
+- at the top level
+- inside `<CodeBlock>` (braces are literal)
+- inside unsupported attributes such as `<Image src="{contact.avatarUrl}" />` (this is a validation error)
+- unprefixed in validated LMX (`{firstName}` should be `{contact.firstName}`, `{event.firstName}`, or `{data.firstName}` depending on email type)
 
 ### Contact properties (`{contact.X}`)
 
@@ -530,28 +553,11 @@ Loops fills these in at send time:
 <Paragraph><Link href="{system.unsubscribe_link}">Unsubscribe</Link></Paragraph>
 ```
 
-Use the namespace that matches the email type: `{contact.X}` for campaigns and workflow emails, `{event.X}` for workflow emails when the value comes from the triggering event, and `{data.X}` for transactional emails. Do not mix namespaces across email types.
+#### Footer content variables
 
-Variables are valid in:
+Do not recreate the legal footer, postal address, or unsubscribe block inside campaign, workflow, or transactional LMX. Loops appends required footer content automatically. When editing footer content itself (Settings → Footers, or with the API), use the variables listed above.
 
-- inline content: headings, paragraphs, quotes, list items, and inline tags
-- button text
-- supported dynamic attributes:
-  - `<Button href="...">`
-  - `<Link href="...">`
-  - `<Icon href="...">`
-  - `<Image alt="..." href="..." dynamicSrc="...">`
-  - `<Section href="...">`
-- whole-variable attributes, with no surrounding text:
-  - `<Section if="{contact.plan}">`
-  - `<For variable="{data.items}">`
-
-Variables are not valid:
-
-- at the top level
-- inside `<CodeBlock>` (braces are literal)
-- inside unsupported attributes such as `<Image src="{contact.avatarUrl}" />` (this is a validation error)
-- unprefixed in validated LMX (`{firstName}` should be `{contact.firstName}`, `{event.firstName}`, or `{data.firstName}` depending on email type)
+Footer content can use `{contact.email}`, but no other contact properties.
 
 ### Fallback Values
 
@@ -598,7 +604,9 @@ If a user asks for fallback behavior in LMX output, mention that the LMX markup 
 | Adjacent top-level `<Section>` siblings with no spacer | Add a line-break spacer between sections unless the user explicitly specified a different spacing treatment |
 | Adjacent top-level `blockColor` blocks with no spacer | Add visible vertical space between highlighted blocks unless they are intentionally one connected card |
 | Unescaped `<` or `&` in text | Use `&lt;` and `&amp;` |
-| Manual legal footer, postal address, or unsubscribe block | Omit it; Loops adds required footer content automatically. A branded footer component can appear above it |
+| Manual legal footer, postal address, or unsubscribe block | Omit it from email-message LMX; Loops adds required footer content automatically. A branded footer component can appear above it |
+| `{contact.firstName}` (or other non-email contact props) in footer content | Footer content may use `{contact.email}` only; use `{system.company_name}`, `{system.company_address}`, and `{system.mailing_list_name}` for company/list fields |
+| Inventing `{system.*}` tags in email-message LMX for company/address | Those system variables belong in footer content, not in campaign/workflow/transactional bodies |
 
 ---
 

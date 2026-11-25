@@ -19,7 +19,7 @@ description: >
   overrides a specific rule. Do not trigger for questions about the Loops HTTP
   API, SDK integration, or CLI unless email body content is also involved.
 metadata:
-  version: 1.1.17
+  version: 1.1.18
 ---
 
 # LMX Skill
@@ -114,4 +114,5 @@ Before returning any LMX output, verify:
 - [ ] `<Columns>` has two to four `<ColumnItem>` children, with `widths` matching the column count when provided
 - [ ] Dynamic images use static `src` plus `dynamicSrc`, not variables in `src`
 - [ ] `<Icons color>` uses one of `#000000`, `#808080`, or `#ffffff`; `<Icon>` has no `color` attr
-- [ ] No legal footer, postal address, or unsubscribe block is added by hand; Loops adds required footer content automatically. A branded footer component can appear above it
+- [ ] No legal footer, postal address, or unsubscribe block is added by hand in email-message LMX; Loops adds required footer content automatically. A branded footer component can appear above it
+- [ ] Footer content (when editing footers) uses `{system.company_name}`, `{system.company_address}`, and `{system.mailing_list_name}` as needed, and `{contact.email}` only among contact properties
